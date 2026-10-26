@@ -78,23 +78,24 @@ export async function init() {
     return true;
   };
   // ---- línea de tiempo del tramo (t en segundos del vídeo completo: 22 a 40)
+  // Sin plano ni fecha a pantalla completa: tras el giro, el îlot ya está en axonometría y creciendo (lección del 009:
+  // el 75 % se fue al pasar del gimnasio al plano de Madrid). Lugar y fechas, en el texto pequeño de arriba.
   const K = [
-    { t: 22.0, tg: [0, 0, -10], z: 210, az: -30, el: 89 },
-    { t: 24.6, tg: [0, 4, 0], z: 168, az: 30, el: 70 },
-    { t: 27.6, tg: [2, 10, 4], z: 112, az: 95, el: 50 },
-    { t: 30.6, tg: [5, 12, 5], z: 100, az: 120, el: 46 },
-    { t: 33.8, tg: [6, 12, -6], z: 138, az: 150, el: 40 },
-    { t: 36.8, tg: [12, 11, 16], z: 58, az: 108, el: 28 },
-    { t: 40.0, tg: [14, 10, 20], z: 44, az: 118, el: 22 } ];
-  const words = [[22.4, 25.2, 'Lyon, 2012–2018.'], [25.4, 29.4, 'La nave vieja se queda.'], [29.8, 32.4, 'Nueve edificios, seis arquitectos.'], [32.6, 35.2, 'Cose con el barrio viejo.'], [35.6, 39.4, 'La nave, hoy gimnasio.']];
+    { t: 22.0, tg: [2, 10, 6], z: 104, az: 75, el: 48 },
+    { t: 25.0, tg: [4, 12, 5], z: 106, az: 102, el: 45 },
+    { t: 28.0, tg: [5, 12, 5], z: 100, az: 124, el: 42 },
+    { t: 30.6, tg: [6, 12, -6], z: 138, az: 150, el: 40 },
+    { t: 34.4, tg: [12, 11, 16], z: 58, az: 108, el: 28 },
+    { t: 40.0, tg: [14, 10, 20], z: 42, az: 118, el: 22 } ];
+  const words = [[22.4, 25.4, 'La nave vieja se queda.'], [25.6, 28.6, 'Nueve edificios, seis arquitectos.'], [29.4, 32.6, 'Cose con el barrio viejo.'], [33.6, 37.0, 'La nave, hoy gimnasio.']];
   const LAB = { charl: [-55, 0, -41], casi: [41, 0, -64], sb: [40, 0, -78], smith: [39, 0, 7] };
   window.renderAt = (tt) => {
     let i = 1; while (i < K.length - 1 && K[i].t < tt) i++; const a = K[i - 1], b = K[i]; const u = smr(seg(tt, a.t, b.t));
-    const grow = G.a3.map((g, j) => { const t0 = 24.6 + j * 0.4, dur = j === G.a3.length - 1 ? 2.4 : 1.8; return smr(seg(tt, t0, t0 + dur)); });
+    const grow = G.a3.map((g, j) => { const t0 = 21.8 + j * 0.3, dur = j === G.a3.length - 1 ? 2.2 : 1.6; return smr(seg(tt, t0, t0 + dur)); });
     let tw = '', to = 0; for (const [a0, b0, tx] of words) { const f = fw(tt, a0, b0, 0.22); if (f > 0) { tw = tx; to = f; } }
-    const labels = [['ÎLOT A3 · LYON CONFLUENCE', [0, 0, -28], fw(tt, 22.4, 25.2, 0.3)], ['COURS CHARLEMAGNE', LAB.charl, 0.85 * fw(tt, 26.2, 31.4, 0.4)], ['RUE CASIMIR PÉRIER', LAB.casi, 0.85 * fw(tt, 26.2, 35.2, 0.4)], ['SAINTE-BLANDINE · S. XIX', LAB.sb, fw(tt, 32.6, 35.2, 0.3)]];
+    const labels = [['COURS CHARLEMAGNE', LAB.charl, 0.85 * fw(tt, 23.0, 28.6, 0.4)], ['RUE CASIMIR PÉRIER', LAB.casi, 0.85 * fw(tt, 23.0, 32.6, 0.4)], ['SAINTE-BLANDINE · S. XIX', LAB.sb, fw(tt, 29.4, 32.6, 0.3)]];
     return window.shot({ t: tt, tg: a.tg.map((v, j) => lerp(v, b.tg[j], u)), z: Math.exp(lerp(Math.log(a.z), Math.log(b.z), u)), az: lerp(a.az, b.az, u), el: lerp(a.el, b.el, u),
-      grow, ppl: tt > 29.8 ? 1 : 0, labels, title: tw, titleOp: to });
+      grow, ppl: tt > 27.0 ? 1 : 0, labels, title: tw, titleOp: to, kick: 'LYON · ÎLOT A3 · 2012–2018' });
   };
   window.READY = true;
 }

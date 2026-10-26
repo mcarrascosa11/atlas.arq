@@ -2,7 +2,7 @@
 # 0–22 s, Zaragoza: a rigid copy-paste loop (dry ticks on an exact grid, steady thump, cold hollow pad on a static
 # A-minor drone): every bar identical. 22 s, the flip: a short noise rise and the harmony opens to Fmaj7.
 # 22–48 s, Lyon: the same A–E now sits warm on Fmaj7–G6–Em7–Am9; one kalimba note per building as the A3 grows
-# (the hall at 22.4, then 24.6 + 0.4·j), FM electric piano with human timing, round bass, a soft shaker for the street.
+# (the hall at 21.6, then 21.8 + 0.3·j), FM electric piano with human timing, round bass, a soft shaker for the street.
 # Different from 007 (minor pads), 008 (bossa guitar) and 009 (marimba in F). Clean mix, no saturation.
 import numpy as np, scipy.signal as ss, wave, sys
 SR = 44100; DUR = 48.0; BAR = 2.75; BEAT = BAR / 4; E8 = BEAT / 2; S16 = BEAT / 4
@@ -69,8 +69,8 @@ for b, (root, ch) in enumerate(prog):
         add(bassn(mtof(root - 12 - 2), mtof(root - 12), BAR * 0.95 if not last else 5.0, 0.3), t0 + rng.normal(0, 0.005), bus='bass')
         if not last: add(bassn(mtof(root - 12 + 7), mtof(root - 12 + 7), BAR * 0.4, 0.2), t0 + 2.5 * BEAT, bus='bass')
 # one kalimba note per building: the hall first, then the eight new ones (same timings as lyon.js)
-add(kal(mtof(53), 2.0, 0.22), 22.4, pan=0.0, bus='kal')
-for j, m in enumerate([65, 69, 72, 76, 74, 77, 81, 88]): add(kal(mtof(m), 1.6 if j < 7 else 3.0, 0.16 if j < 7 else 0.2), 24.6 + j * 0.4, pan=-0.4 + 0.1 * j, bus='kal')
+add(kal(mtof(53), 2.0, 0.22), 21.6, pan=0.0, bus='kal')
+for j, m in enumerate([65, 69, 72, 76, 74, 77, 81, 88]): add(kal(mtof(m), 1.6 if j < 7 else 3.0, 0.16 if j < 7 else 0.2), 21.8 + j * 0.3, pan=-0.4 + 0.1 * j, bus='kal')
 # the A–E figure again, now warm and never twice the same
 phr = [[(0, 81), (0.5, 76), (1, 79), (2, 81)], [(0, 81), (0.75, 76), (1.5, 74), (2.5, 76)], [(0, 83), (0.5, 81), (1, 76), (2, 79)], [(0, 81), (1, 76), (1.5, 79), (2, 81), (3, 84)]]
 for p, t0 in enumerate([T1 + 3 * BAR, T1 + 4 * BAR, T1 + 5 * BAR, T1 + 6 * BAR]):
