@@ -1,0 +1,18 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+@font-face{font-family:'SG';src:url(fonts/sg700.woff2) format('woff2');font-weight:700}
+@font-face{font-family:'SM';src:url(fonts/sm400.woff2) format('woff2');font-weight:400}
+html,body{margin:0;width:1640px;height:856px;background:#F2F1EC;overflow:hidden;position:relative}
+.t{position:absolute;left:96px;top:270px;font-family:'SG';font-weight:700;color:#1A1B20;font-size:74px;line-height:0.98;letter-spacing:-0.02em}
+.k{position:absolute;left:100px;top:210px;font-family:'SM';color:#E2401C;font-size:26px;letter-spacing:0.08em}
+.row{position:absolute;right:70px;top:120px;height:470px;display:flex;align-items:flex-end;gap:18px}
+.row img{height:100%;width:auto;display:block}
+.row img.s{height:78%}.row img.m{height:88%}
+.base{position:absolute;right:70px;top:592px;width:820px;height:2px;background:#1A1B20}
+</style></head><body>
+<div class="k">ATLAS · 001 — 008</div>
+<div class="t">arquitectura<br>explicada<br>en dibujo</div>
+<img src="banner/005_torre_nueva.png" style="position:absolute;left:580px;top:160px;height:400px">
+<img src="banner/006_torres_blancas.png" style="position:absolute;left:879px;top:250px;height:310px">
+<img src="banner/008_sesc_pompeia.png" style="position:absolute;left:1225px;top:310px;height:250px">
+<div style="position:absolute;left:580px;top:560px;width:1000px;height:2px;background:#1A1B20"></div>
+<script>document.fonts.ready.then(()=>{Promise.all([...document.images].map(i=>i.complete?1:new Promise(r=>i.onload=r))).then(()=>window.READY=true)})</script></body></html>
