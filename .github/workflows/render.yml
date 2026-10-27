@@ -1,0 +1,27 @@
+# Render de vídeos de atlas: lee motor/ci/job.json y ejecuta motor/ci/run.sh, que deja el MP4 en videos/ y la portada en portadas/.
+# Usa el token temporal que GitHub da a cada ejecución; no hay credenciales personales. Se lanza al cambiar job.json o a mano.
+name: render atlas
+on:
+  push:
+    paths: ['motor/ci/job.json', '.github/workflows/render.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+      - name: render
+        run: bash motor/ci/run.sh
+      - name: registro del fallo
+        if: failure()
+        run: |
+          cp /tmp/ci_log.txt motor/ci/log.txt 2>/dev/null || echo "sin registro" > motor/ci/log.txt
+          git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add motor/ci/log.txt && git commit -m "render: registro del fallo" && git pull --rebase -q && git push
