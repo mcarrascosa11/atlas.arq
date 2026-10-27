@@ -140,14 +140,15 @@ export async function init() {
   { const P = [], B = [], T = [], E = [];   // agua
     for (const w of L.water) flat(orient(w), -0.3, P, B, T);
     LG.add(new THREE.Mesh(geomFrom(P, B, T), blueM)); }
+  const LC = new THREE.Group(), NOH = new THREE.Group(); LG.add(LC); LG.add(NOH);
   { const P = [], B = [], T = [], E = [], F = [];
     for (const b of L.blds) {
       if (b.k === 'a3' || b.k === 'hall') continue;
       if (b.h === null || b.h === undefined) { for (const r of b.r) for (let i = 0; i < r.length; i++) { const a = r[i], c = r[(i + 1) % r.length]; F.push(a[0], 0.04, a[1], c[0], 0.04, c[1]); } continue; }
       extrude(b.r, 0, Math.max(b.h, 2.5), P, B, T, E, { base: true });
     }
-    LG.add(new THREE.Mesh(geomFrom(P, B, T), paperM)); LG.add(segs(E, lineMat(INK, LW.C))); LG.add(segs(F, lineMat(GREY, LW.C))); }
-  const A3 = [], RDC = [];
+    LC.add(new THREE.Mesh(geomFrom(P, B, T), paperM)); LC.add(segs(E, lineMat(INK, LW.C))); NOH.add(segs(F, lineMat(GREY, LW.C))); }
+  const A3 = [], RDC = []; let hallG = null;
   const ORDER = ['568291', '568867', '568495', '568890', '568935', '569058', '568304', '569173'];
   for (const b of L.blds) {
     if (b.k !== 'a3' && b.k !== 'hall') continue;
@@ -157,9 +158,17 @@ export async function init() {
     const g = new THREE.Group(); for (const [A, M] of [[{ P, B, T }, paperM], [G.Wl, paperM], [G.Rv, revealM], [G.Gl, glassM], [G.Sl, slabM]]) g.add(new THREE.Mesh(geomFrom(A.P, A.B, A.T), M));
     g.add(segs(E, lineMat(INK, LW.B))); g.add(segs(E2, lineMat(INK, LW.C)));
     const rg = new THREE.Mesh(geomFrom(G.Gr.P, G.Gr.B, G.Gr.T), redM); rg.scale.y = 0.0001; g.add(rg); RDC.push(rg);
-    LG.add(g); if (b.k === 'a3') { g.userData.id = b.id; A3.push(g); }
+    LG.add(g); if (b.k === 'a3') { g.userData.id = b.id; A3.push(g); } else hallG = g;
   }
   A3.sort((p, q) => ORDER.indexOf(p.userData.id) - ORDER.indexOf(q.userData.id));
+  // planta final: aparece debajo cuando los volúmenes se aplanan (está dentro de ellos hasta entonces)
+  const PLN = new THREE.Group(), PLN2 = new THREE.Group(); LG.add(PLN); LG.add(PLN2);
+  { const mk = () => ({ P: [], B: [], T: [] }), Pn = mk(), Po = mk(), Pa = mk(), Ph = mk(), Px = mk();
+    for (const b of L.blds) { const R = orient(b.r), A = b.k === 'a3' ? Pa : b.k === 'hall' ? Ph : (b.h === null || b.h === undefined) ? Px : b.old ? Po : Pn; flat(R, 0.25, A.P, A.B, A.T); }
+    const add = (A, M, G) => G.add(new THREE.Mesh(geomFrom(A.P, A.B, A.T), M));
+    add(Pn, flatM('#DEDCD5'), PLN); add(Po, flatM('#A6A39B'), PLN); add(Pa, inkM, PLN); add(Ph, redM, PLN); add(Px, flatM('#DEDCD5'), PLN2);
+    const Fq = mk(); for (const qd of (L.frontq || [])) flat(orient([qd]), 0.3, Fq.P, Fq.B, Fq.T); add(Fq, redM, PLN); }   // bajos a calle: franja bermellón de 2,5 m
+  const hallC = (() => { const r = L.blds.find(b => b.k === 'hall').r[0]; return [r.reduce((s, p) => s + p[0], 0) / r.length, r.reduce((s, p) => s + p[1], 0) / r.length]; })();
   const garden = new THREE.Group(); LG.add(garden);
   { const P = [], B = [], T = []; for (const gr of L.garden) flat(orient(gr), 0.06, P, B, T);
     const gm = new THREE.Mesh(geomFrom(P, B, T), greenM); const box = new THREE.Box3().setFromObject(gm); const c = box.getCenter(new THREE.Vector3());
@@ -180,7 +189,9 @@ export async function init() {
     const gr = o.grow ?? A3.map(() => 1); A3.forEach((g, i) => { g.scale.y = Math.max(0.0005, gr[i] ?? 1); g.visible = (gr[i] ?? 1) > 0.04; });
     const rd = o.rdc ?? 0; for (const m of RDC) { m.scale.y = Math.max(0.0001, rd); m.visible = rd > 0.002; }
     const gd = o.garden ?? 0; garden.scale.set(Math.max(0.0001, gd), 1, Math.max(0.0001, gd)); garden.visible = gd > 0.002;
-    PPL.visible = (o.ppl ?? 0) > 0.5; walk(o.t ?? 0);
+    const fl = o.flat ?? 0, fy = Math.max(0.003, 1 - 0.997 * fl); LC.scale.y = fy; if (hallG) hallG.scale.y = fy; A3.forEach(g => { g.scale.y *= fy; });
+    PLN2.visible = fl > 0.6; NOH.visible = fl < 0.6; if (fl > 0.97) { A3.forEach(g => { g.visible = false; }); if (hallG) hallG.visible = false; } else if (hallG) hallG.visible = true;   // en planta solo queda la mancha
+    PPL.visible = (o.ppl ?? 0) > 0.5 && fl < 0.08; walk(o.t ?? 0);
     const az = o.az * Math.PI / 180, el = o.el * Math.PI / 180, z = o.z, t = o.tg;
     camera.left = -z * W / H; camera.right = z * W / H; camera.top = z; camera.bottom = -z;
     const d = 9000; camera.position.set(t[0] + Math.sin(az) * Math.cos(el) * d, t[1] + Math.sin(el) * d, t[2] + Math.cos(az) * Math.cos(el) * d);
@@ -191,7 +202,7 @@ export async function init() {
     for (const [txt, p, op0] of (o.labels || [])) { const q = P2(p); const half = txt.length * 9 + 30; const op = op0 * clamp(Math.min(q[0] - half, W - half - q[0], q[1] - 420, H - 460 - q[1]) / 60); if (op < 0.02) continue; svg.insertAdjacentHTML('beforeend', `<text class="maplab" x="${q[0]}" y="${q[1]}" text-anchor="middle" opacity="${op}">${txt}</text>`); }
     return true;
   };
-  // ================= línea de tiempo (48 s) =================
+  // ================= línea de tiempo (50 s) =================
   const K = [
     { t: 0.0, tg: [-165, 26, 125], z: 95, az: 225, el: 20 },
     { t: 3.0, tg: [-152, 18, 120], z: 74, az: 205, el: 16 },
@@ -208,15 +219,18 @@ export async function init() {
     { t: 33.0, tg: [OX + 5, 10, OZ + 5], z: 112, az: 95, el: 46 },
     { t: 36.0, tg: [OX + 5, 12, OZ + 5], z: 100, az: 118, el: 42 },
     { t: 39.6, tg: [OX + 6, 12, OZ], z: 104, az: 132, el: 38 },
-    { t: 43.2, tg: [OX + 12, 11, OZ + 16], z: 58, az: 110, el: 28 },
-    { t: 48.0, tg: [OX + 14, 10, OZ + 20], z: 42, az: 118, el: 22 } ];
+    { t: 43.0, tg: [OX + 12, 11, OZ + 16], z: 58, az: 112, el: 26 },
+    { t: 44.4, tg: [OX + 14, 9, OZ + 20], z: 50, az: 116, el: 22 },
+    { t: 46.6, tg: [OX - 2, 0, OZ - 34], z: 186, az: -22, el: 89 },
+    { t: 50.0, tg: [OX - 4, 0, OZ - 36], z: 174, az: -29.7, el: 89.5 } ];
   // Zaragoza: modificación del Plan General en el área G-44-2 (texto refundido, octubre de 2014), promovida por Zaragoza Alta Velocidad 2002:
   // suprime la superficie mínima obligatoria de usos distintos de vivienda por la escasa demanda y crea zonas privadas de ocio comunitario.
   const words = [[0.25, 3.1, '¿Hay alternativa a los bloques cebra?'], [3.5, 7.6, 'Así llega a la calle.'], [8.0, 11.6, 'El plan pedía bajos activos.'],
     [12.0, 15.8, 'La sociedad pública pidió quitarlo.'], [16.2, 19.6, 'Para vender mejor el suelo.'], [20.0, 23.2, 'A cambio, patio privado dentro.'],
-    [26.8, 29.9, 'Sí: Lyon Confluence.'], [30.4, 34.8, 'Empresa pública, pliego por manzana.'], [35.4, 39.6, 'Bajos abiertos a la calle.'], [40.2, 43.8, 'Nueve edificios, seis arquitectos.']];
+    [26.8, 29.9, 'Sí: Lyon Confluence.'], [30.4, 34.8, 'Empresa pública, pliego por manzana.'], [35.4, 39.6, 'Bajos abiertos a la calle.'], [40.2, 43.8, 'Nueve edificios, seis arquitectos.'],
+    [45.4, 47.7, 'Ya no ignora la ciudad.'], [47.9, 50.5, 'Nace de ella.']];
   const kick = (t) => t < 8.0 ? '010 · ZARAGOZA · AV. CIUDAD DE SORIA' : t < 12.0 ? '010 · ZARAGOZA · PLAN GENERAL, 2006' : t < 20.0 ? '010 · ZARAGOZA · MODIFICACIÓN, 2014' :
-    t < 23.2 ? '010 · ZARAGOZA · ENTORNO DE DELICIAS' : t < 26.2 ? '010 · ZARAGOZA → LYON' : t < 40.0 ? '010 · LYON · CONFLUENCE' : '010 · LYON · ÎLOT A3';
+    t < 23.2 ? '010 · ZARAGOZA · ENTORNO DE DELICIAS' : t < 26.2 ? '010 · ZARAGOZA → LYON' : t < 40.0 ? '010 · LYON · CONFLUENCE' : t < 45.2 ? '010 · LYON · ÎLOT A3' : '010 · LYON · ÎLOT A3 EN PLANTA';
   window.renderAt = (tt) => {
     let i = 1; while (i < K.length - 1 && K[i].t < tt) i++; const a = K[i - 1], b = K[i]; const u = smr(seg(tt, a.t, b.t));
     const plinth = tt < 8.2 ? 1 : tt < 12.4 ? 1 - smr(seg(tt, 8.2, 9.2)) : smr(seg(tt, 12.4, 13.6));   // el zócalo ciego se va mientras el plan exige locales y vuelve en 2014
@@ -224,9 +238,10 @@ export async function init() {
     let tw = '', to = 0; for (const [a0, b0, tx] of words) { const f = fw(tt, a0, b0, 0.22); if (f > 0) { tw = tx; to = f; } }
     const labels = [['AV. CIUDAD DE SORIA', [-175, 0, 70], 0.9 * fw(tt, 0.4, 7.6, 0.4)], ['ZARAGOZA', [-250, 0, 0], fw(tt, 23.4, 25.6, 0.3)], ['LYON', [OX, 0, OZ - 200], fw(tt, 23.8, 26.2, 0.3)],
       ['SAÔNE', [OX + wl[0].x, 0, OZ + wl[0].z], fw(tt, 26.6, 31.0, 0.4)], ['RHÔNE', [OX + wl[1].x, 0, OZ + wl[1].z], fw(tt, 26.6, 31.0, 0.4)],
-      ['ÎLOT A3', [OX, 0, OZ - 30], fw(tt, 27.4, 32.0, 0.4)], ['COURS CHARLEMAGNE', [OX - 55, 0, OZ - 41], 0.85 * fw(tt, 34.0, 39.0, 0.4)]];
+      ['ÎLOT A3', [OX, 0, OZ - 30], fw(tt, 27.4, 32.0, 0.4)], ['COURS CHARLEMAGNE', [OX - 55, 0, OZ - 41], 0.85 * Math.max(fw(tt, 34.0, 39.0, 0.4), fw(tt, 46.0, 50.6, 0.4))],
+      ['NAVE DEL MERCADO', [OX + hallC[0], 0, OZ + hallC[1]], fw(tt, 46.2, 50.6, 0.4)], ['SAINTE-BLANDINE', [OX + 40, 0, OZ - 112], fw(tt, 46.4, 50.6, 0.4)]];
     return window.shot({ t: tt, tg: a.tg.map((v, j) => lerp(v, b.tg[j], u)), z: Math.exp(lerp(Math.log(a.z), Math.log(b.z), u)), az: lerp(a.az, b.az, u), el: lerp(a.el, b.el, u),
-      zebra: 1, plinth, grow, rdc: smr(seg(tt, 35.4, 37.4)), garden: smr(seg(tt, 35.8, 37.2)), ppl: tt > 36.0 ? 1 : 0, labels, title: tw, titleOp: to, kick: kick(tt) });
+      zebra: 1, plinth, grow, rdc: smr(seg(tt, 35.4, 37.4)), garden: smr(seg(tt, 35.8, 37.2)), ppl: tt > 36.0 ? 1 : 0, flat: smr(seg(tt, 44.6, 46.3)), labels, title: tw, titleOp: to, kick: kick(tt) });
   };
   window.renderCover = () => { document.body.classList.add('cover');
     return window.shot({ t: 0, tg: [-160, 64, 128], z: 112, az: 225, el: 20, zebra: 1, ctx: false, kick: '', title: '' }); };

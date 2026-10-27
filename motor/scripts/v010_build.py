@@ -46,6 +46,29 @@ for f in json.load(open(agua))['features']:
         lp = Polygon([loc(x, y) for x, y, *_ in pg.exterior.coords[:-1]], [[loc(x, y) for x, y, *_ in h.coords[:-1]] for h in pg.interiors]).buffer(0).intersection(Bx)
         for q in ([lp] if isinstance(lp, Polygon) else list(getattr(lp, 'geoms', []))):
             if not q.is_empty and q.area >= 50: water.append([[[round(x, 1), round(z, 1)] for x, z in list(q.exterior.coords)[:-1]]] + [[[round(x, 1), round(z, 1)] for x, z in list(h.coords)[:-1]] for h in q.interiors])
+# tejido anterior a 1950 (BD TOPO, date_d_apparition) para la planta final
+from shapely.geometry import Point
+old_c = []
+for f in json.load(open(edif))['features']:
+    app = (f['properties'].get('date_d_apparition') or '')[:4]
+    if app and app < '1950': c = shape(f['geometry']).centroid; old_c.append(loc(c.x, c.y))
+for b in blds:
+    if b.get('k'): continue
+    pg = Polygon(b['r'][0]).buffer(0.5); cx = sum(q[0] for q in b['r'][0]) / len(b['r'][0]); cz = sum(q[1] for q in b['r'][0]) / len(b['r'][0])
+    if any(pg.contains(Point(o)) for o in old_c if abs(o[0] - cx) < 60 and abs(o[1] - cz) < 60): b['old'] = 1
+# bajos a calle del A3: franjas de 2,5 m dentro de cada arista exterior que da a la envolvente de la manzana
+a3b = [b for b in blds if b.get('k') in ('a3', 'hall')]; hull = unary_union([Polygon(b['r'][0]) for b in a3b]).convex_hull; frontq = []
+for b in a3b:
+    if b.get('k') == 'hall': continue
+    r = b['r'][0]; pg = Polygon(r)
+    for i in range(len(r)):
+        a, c = r[i], r[(i + 1) % len(r)]; dx, dz = c[0] - a[0], c[1] - a[1]; ln = math.hypot(dx, dz)
+        if ln < 2.0: continue
+        mx, mz = (a[0] + c[0]) / 2, (a[1] + c[1]) / 2; nx, nz = dz / ln, -dx / ln
+        if pg.contains(Point(mx + nx * 0.3, mz + nz * 0.3)): nx, nz = -nx, -nz
+        if hull.exterior.distance(Point(mx, mz)) < 6.0 and not hull.contains(Point(mx + nx * 3, mz + nz * 3)):
+            p = lambda x, z, d: [round(x - nx * d, 2), round(z - nz * d, 2)]
+            frontq.append([p(a[0], a[1], 0.3), p(c[0], c[1], 0.3), p(c[0], c[1], 2.8), p(a[0], a[1], 2.8)])
 blk = unary_union(a3polys); court = blk.convex_hull.buffer(-3.0).difference(blk.buffer(1.5))
 garden = [[[loc(x, y) for x, y, *_ in q.exterior.coords[:-1]]] for q in ([court] if isinstance(court, Polygon) else list(court.geoms)) if q.area > 40]
 ring = blk.convex_hull.buffer(4.5, join_style=2).exterior; random.seed(7); ppl = []; Lr = ring.length; n = int(Lr / 4.5)
@@ -54,5 +77,5 @@ for i in range(n):
     s = (i + random.random() * 0.5) / n * Lr; a = ring.interpolate(s); b2 = ring.interpolate(min(Lr, s + 1.0))
     dx, dz = b2.x - a.x, b2.y - a.y; ll = math.hypot(dx, dz) or 1; o = random.uniform(-1.2, 1.2); nx, nz = -dz / ll, dx / ll
     ppl.append([round(a.x + nx * o - X0, 2), round(-(a.y + nz * o - Y0), 2), round(dx / ll, 3), round(-dz / ll, 3)])
-json.dump(dict(src='IGN BD TOPO (Licence Ouverte 2.0)', blds=blds, water=water, garden=garden, ppl=ppl), open(os.path.join(web, 'lyon10.json'), 'w'), separators=(',', ':'))
+json.dump(dict(src='IGN BD TOPO (Licence Ouverte 2.0)', blds=blds, water=water, garden=garden, ppl=ppl, frontq=frontq), open(os.path.join(web, 'lyon10.json'), 'w'), separators=(',', ':'))
 print('ok:', len(vols), 'partes en Zaragoza;', len(blds), 'volúmenes en Lyon;', len(water), 'polígonos de agua')

@@ -1,7 +1,7 @@
 import asyncio, os, time, sys
 from playwright.async_api import async_playwright
 # 010: renderiza fotogramas JPEG (reanudable: salta los que ya existen). uso: python3 render10.py [inicio] [fin]
-OUT = '/home/claude/v010/frames'; FPS = 30; DUR = 48.0
+OUT = '/home/claude/v010/frames'; FPS = 30; DUR = 50.0
 a = int(sys.argv[1]) if len(sys.argv) > 1 else 0; b = int(sys.argv[2]) if len(sys.argv) > 2 else int(DUR * FPS)
 async def main():
     os.makedirs(OUT, exist_ok=True)
