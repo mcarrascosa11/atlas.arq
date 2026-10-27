@@ -5,7 +5,7 @@
 # (the hall at 30.0, then 30.4 + 0.4·j, as in v010.js), FM electric piano with human timing, round bass, a soft shaker for the street.
 # Different from 007 (minor pads), 008 (bossa guitar) and 009 (marimba in F). Clean mix, no saturation.
 import numpy as np, scipy.signal as ss, wave, sys
-SR = 44100; DUR = 48.0; BAR = 3.0; BEAT = BAR / 4; E8 = BEAT / 2; S16 = BEAT / 4
+SR = 44100; DUR = 50.0; BAR = 3.0; BEAT = BAR / 4; E8 = BEAT / 2; S16 = BEAT / 4
 N = int(SR * DUR); BUS = {k: [np.zeros(N), np.zeros(N)] for k in ('tick', 'kick', 'hat', 'pad', 'rise', 'ep', 'bass', 'kal', 'shk')}
 rng = np.random.default_rng(10)
 def mtof(m): return 440 * 2 ** ((m - 69) / 12)
