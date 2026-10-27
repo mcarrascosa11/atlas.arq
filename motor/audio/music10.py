@@ -1,11 +1,11 @@
 # Original cue for 010 (bloques cebra / îlot A3). Idea: the same two-note figure (A–E) twice.
-# 0–22 s, Zaragoza: a rigid copy-paste loop (dry ticks on an exact grid, steady thump, cold hollow pad on a static
-# A-minor drone): every bar identical. 22 s, the flip: a short noise rise and the harmony opens to Fmaj7.
-# 22–48 s, Lyon: the same A–E now sits warm on Fmaj7–G6–Em7–Am9; one kalimba note per building as the A3 grows
-# (the hall at 21.6, then 21.8 + 0.3·j), FM electric piano with human timing, round bass, a soft shaker for the street.
+# 0–24 s, Zaragoza: a rigid copy-paste loop (dry ticks on an exact grid, steady thump, cold hollow pad on a static
+# A-minor drone): every bar identical. 24 s, the pan to Lyon: a short noise rise and the harmony opens to Fmaj7.
+# 24–48 s, Lyon: the same A–E now sits warm on Fmaj7–G6–Em7–Am9; one kalimba note per building as the A3 grows
+# (the hall at 30.0, then 30.4 + 0.4·j, as in v010.js), FM electric piano with human timing, round bass, a soft shaker for the street.
 # Different from 007 (minor pads), 008 (bossa guitar) and 009 (marimba in F). Clean mix, no saturation.
 import numpy as np, scipy.signal as ss, wave, sys
-SR = 44100; DUR = 48.0; BAR = 2.75; BEAT = BAR / 4; E8 = BEAT / 2; S16 = BEAT / 4
+SR = 44100; DUR = 48.0; BAR = 3.0; BEAT = BAR / 4; E8 = BEAT / 2; S16 = BEAT / 4
 N = int(SR * DUR); BUS = {k: [np.zeros(N), np.zeros(N)] for k in ('tick', 'kick', 'hat', 'pad', 'rise', 'ep', 'bass', 'kal', 'shk')}
 rng = np.random.default_rng(10)
 def mtof(m): return 440 * 2 ** ((m - 69) / 12)
@@ -38,7 +38,7 @@ def bassn(f0, f1, dur, amp):            # round bass with a little slide
     return amp * np.minimum(1, x / 0.01) * np.exp(-x / 0.9) * np.minimum(1, (dur - x) / 0.05) * (np.sin(ph) + 0.1 * np.sin(2 * ph))
 def shaker(amp):
     n = int(SR * 0.06); return amp * env(n, 0.003, 0.022) * ss.sosfilt(ss.butter(2, [4000, 10000], 'band', fs=SR, output='sos'), rng.normal(0, 1, n))
-# ---------------- part 1: Zaragoza, 0–22 s (8 identical bars) ----------------
+# ---------------- part 1: Zaragoza, 0–24 s (8 identical bars) ----------------
 T1 = 8 * BAR
 fig = [81, 76, 81, 76, 81, 76, 81, 76]                                  # A5 E5 ... identical in every bar
 for b in range(8):
@@ -55,9 +55,9 @@ for k in range(12):                                                    # widenin
     lo = 400 * 1.28 ** k; seg = ss.sosfilt(ss.butter(2, [lo, min(lo * 3, 16000)], 'band', fs=SR, output='sos'), nz)
     w = np.clip((x / 2.4) * 12 - k, 0, 1) * np.clip(k + 2 - (x / 2.4) * 12, 0, 1); rise += seg * w
 add(0.05 * rise * (x / 2.4) ** 2, T1 - 2.4, bus='rise')
-# ---------------- part 2: Lyon, 22–48 s ----------------
+# ---------------- part 2: Lyon, 24–48 s ----------------
 prog = [(53, [65, 69, 72, 76]), (53, [65, 69, 72, 76]), (55, [67, 71, 74, 76]), (52, [64, 67, 71, 74]), (57, [69, 72, 76, 83]),
-        (53, [65, 69, 72, 76]), (55, [67, 71, 74, 76]), (48, [60, 64, 67, 74]), (48, [60, 64, 67, 74])]   # Fmaj7 Fmaj7 G6 Em7 Am9 Fmaj7 G6 C Cadd9
+        (53, [65, 69, 72, 76]), (55, [67, 71, 74, 76]), (48, [60, 64, 67, 74])]   # Fmaj7 Fmaj7 G6 Em7 Am9 Fmaj7 G6 Cadd9
 for b, (root, ch) in enumerate(prog):
     t0 = T1 + b * BAR
     if t0 > DUR - 1: break
@@ -69,15 +69,15 @@ for b, (root, ch) in enumerate(prog):
         add(bassn(mtof(root - 12 - 2), mtof(root - 12), BAR * 0.95 if not last else 5.0, 0.3), t0 + rng.normal(0, 0.005), bus='bass')
         if not last: add(bassn(mtof(root - 12 + 7), mtof(root - 12 + 7), BAR * 0.4, 0.2), t0 + 2.5 * BEAT, bus='bass')
 # one kalimba note per building: the hall first, then the eight new ones (same timings as lyon.js)
-add(kal(mtof(53), 2.0, 0.22), 21.6, pan=0.0, bus='kal')
-for j, m in enumerate([65, 69, 72, 76, 74, 77, 81, 88]): add(kal(mtof(m), 1.6 if j < 7 else 3.0, 0.16 if j < 7 else 0.2), 21.8 + j * 0.3, pan=-0.4 + 0.1 * j, bus='kal')
+add(kal(mtof(53), 2.0, 0.22), 30.0, pan=0.0, bus='kal')
+for j, m in enumerate([65, 69, 72, 76, 74, 77, 81, 88]): add(kal(mtof(m), 1.6 if j < 7 else 3.0, 0.16 if j < 7 else 0.2), 30.4 + j * 0.4, pan=-0.4 + 0.1 * j, bus='kal')
 # the A–E figure again, now warm and never twice the same
 phr = [[(0, 81), (0.5, 76), (1, 79), (2, 81)], [(0, 81), (0.75, 76), (1.5, 74), (2.5, 76)], [(0, 83), (0.5, 81), (1, 76), (2, 79)], [(0, 81), (1, 76), (1.5, 79), (2, 81), (3, 84)]]
 for p, t0 in enumerate([T1 + 3 * BAR, T1 + 4 * BAR, T1 + 5 * BAR, T1 + 6 * BAR]):
     for be, m in phr[p]: add(kal(mtof(m), 1.2, 0.12 * (0.85 + 0.3 * rng.random())), t0 + be * BEAT + rng.normal(0, 0.01), pan=0.3, bus='kal')
-# the street: a soft shaker with human timing from 30 s
-for s16 in range(int((DUR - 30.25) / S16)):
-    t0 = 30.25 + s16 * S16
+# the street: a soft shaker with human timing from 36 s, when the people appear
+for s16 in range(int((DUR - 36.0) / S16)):
+    t0 = 36.0 + s16 * S16
     if t0 > DUR - 2.5: break
     add(shaker((0.05 if s16 % 2 else 0.025) * (0.7 + 0.6 * rng.random())), t0 + rng.normal(0, 0.006), pan=-0.3, bus='shk')
 # ---------------- mix ----------------
