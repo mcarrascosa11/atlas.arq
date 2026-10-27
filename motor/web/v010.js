@@ -190,7 +190,8 @@ export async function init() {
     const rd = o.rdc ?? 0; for (const m of RDC) { m.scale.y = Math.max(0.0001, rd); m.visible = rd > 0.002; }
     const gd = o.garden ?? 0; garden.scale.set(Math.max(0.0001, gd), 1, Math.max(0.0001, gd)); garden.visible = gd > 0.002;
     const fl = o.flat ?? 0, fy = Math.max(0.003, 1 - 0.997 * fl); LC.scale.y = fy; if (hallG) hallG.scale.y = fy; A3.forEach(g => { g.scale.y *= fy; });
-    PLN2.visible = fl > 0.6; NOH.visible = fl < 0.6; if (fl > 0.97) { A3.forEach(g => { g.visible = false; }); if (hallG) hallG.visible = false; } else if (hallG) hallG.visible = true;   // en planta solo queda la mancha
+    PLN.visible = fl > 0.02; PLN2.visible = fl > 0.6; NOH.visible = fl < 0.6;   // la planta solo existe en el final (antes asomaba bajo los edificios aún sin crecer)
+    if (fl > 0.97) { A3.forEach(g => { g.visible = false; }); if (hallG) hallG.visible = false; } else if (hallG) hallG.visible = true;   // en planta solo queda la mancha
     PPL.visible = (o.ppl ?? 0) > 0.5 && fl < 0.08; walk(o.t ?? 0);
     const az = o.az * Math.PI / 180, el = o.el * Math.PI / 180, z = o.z, t = o.tg;
     camera.left = -z * W / H; camera.right = z * W / H; camera.top = z; camera.bottom = -z;
