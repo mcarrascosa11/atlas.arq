@@ -4,6 +4,12 @@
 set -euo pipefail
 exec > >(tee -a /tmp/ci_log.txt) 2>&1
 J=motor/ci/job.json; v() { python3 -c "import json,sys; print(json.load(open('$J'))[sys.argv[1]])" "$1"; }
+if python3 -c "import json,sys; sys.exit(0 if 'fetch' in json.load(open('$J')) else 1)"; then   # modo descarga de datos
+  python3 motor/ci/fetch.py
+  D=$(python3 -c "import json; print(json.load(open('$J'))['dir'])")
+  git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  git add "$D"; git commit -m "datos: descarga para $D"; git pull --rebase -q && git push; exit 0
+fi
 PAGE=$(v page); OUT=$(v out); DATA=$(v data); MUSIC=$(v music)
 echo "== $OUT ($PAGE)"
 sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg > /dev/null
