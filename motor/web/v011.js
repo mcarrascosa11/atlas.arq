@@ -146,7 +146,17 @@ export async function init() {
       for (const h of holes) { const shp = new THREE.Shape(h.getPoints(16)); const gg = new THREE.ExtrudeGeometry(shp, { depth: 0.46, bevelEnabled: false }); gg.translate(0, 0, -0.23); const n = withBT(gg, 0, 3); const p = n.attributes.position.array; for (let i = 0; i < p.length; i += 3) { A.P.push(p[i], p[i + 1], p[i + 2]); A.B.push(0); A.T.push(3); } }
       const core = mesh(A, blockM); core.name = 'core'; g.add(core); }   // la piedra que se quita, en gris
     return g; };
-  const blockG = () => { const g = new THREE.Group(), A = mk(), E = []; addBox(A, E, -0.45, 0.45, 0, 3.0, -0.3, 0.3); g.add(mesh(A, blockM)); g.add(segs(E, lineMat(INK, LW.B))); return g; };
+  const blockG = (seed) => { const g = new THREE.Group(); let rs = 1000 + seed * 7919; const r = () => (rs = (rs * 16807) % 2147483647) / 2147483647;
+    const bx = new THREE.BoxGeometry(0.98, 3.0, 0.7, 3, 9, 2); bx.translate(0, 1.5, 0); const pos = bx.attributes.position, J = new Map();
+    const taper = 0.82 + r() * 0.16, bend = (r() - 0.5) * 0.12, ph = r() * 6;
+    for (let i = 0; i < pos.count; i++) { const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i), k = `${x.toFixed(3)},${y.toFixed(3)},${z.toFixed(3)}`;
+      if (!J.has(k)) { const ex = Math.abs(x) > 0.48, ez = Math.abs(z) > 0.34, ey = y < 0.01 || y > 2.99, edge = ex + ez + ey;
+        const chip = edge >= 2 ? 0.08 + r() * 0.16 : 0, sc = 1 - (1 - taper) * (y / 3);
+        let nx = x * sc - (ex ? Math.sign(x) * chip * (0.5 + r()) : 0), nz = z * sc - (ez ? Math.sign(z) * chip * (0.5 + r()) : 0), ny = y + (ey ? (y > 1.5 ? -1 : 1) * chip * (0.4 + r()) : 0);
+        if (!edge || edge === 1) { nx += Math.sign(x || 1) * (ex ? 0.03 * Math.sin(y * 2.1 + ph) : 0); nz += Math.sign(z || 1) * (ez ? 0.025 * Math.cos(y * 1.7 + ph) : 0); }
+        J.set(k, [nx + bend * Math.sin(y * 1.05) + (r() - 0.5) * 0.07, ny + (r() - 0.5) * 0.07, nz + (r() - 0.5) * 0.05]); }
+      const v = J.get(k); pos.setXYZ(i, v[0], v[1], v[2]); }
+    const geo = withBT(bx, 0, 3); g.add(new THREE.Mesh(geo, blockM)); g.add(segs(edgesOf(geo, 26), lineMat(INK, LW.C))); return g; };
   const CN = D.cuneta; const roadDir = (() => { let best = null; for (const r of D.roads) for (let k = 0; k < r.p.length - 1; k++) { const a = r.p[k], d = Math.hypot(a[0] - CN[0], a[2] - CN[2]); if (r.w > 5 && (!best || d < best.d)) best = { d, dx: r.p[k + 1][0] - a[0], dz: r.p[k + 1][2] - a[2] }; } const l = Math.hypot(best.dx, best.dz); return [best.dx / l, best.dz / l]; })();
   const ry = (x, z) => { let best = null; for (const r of D.roads) if (r.w > 5) for (const q of r.p) { const d = Math.hypot(q[0] - x, q[2] - z); if (!best || d < best.d) best = { d, y: q[1] }; } return best.y; };
   let side = [-roadDir[1], roadDir[0]];
@@ -157,11 +167,12 @@ export async function init() {
   const azOf = (dx, dz) => Math.atan2(dx, dz) * 180 / Math.PI;
   const AP = [];
   for (let k = 0; k < 14; k++) {
-    const fig = figG(k, false), blk = k >= 4 ? blockG() : null; scene.add(fig); if (blk) scene.add(blk);
+    const fig = figG(k, false), blk = k >= 4 ? blockG(k) : null; scene.add(fig); if (blk) scene.add(blk);
     const along = (k - 6.5) * 1.5 + Math.sin(k * 2.1) * 0.4, off = 4.3 + (k % 3) * 0.55;
     const cx = CN[0] + roadDir[0] * along + side[0] * off, cz = CN[2] + roadDir[1] * along + side[1] * off;
     const yaw = Math.atan2(roadDir[0], roadDir[1]) + Math.sin(k * 1.7) * 0.45;
-    AP.push({ fig, blk, cun: [cx, Math.max(terrainY(cx, cz), ry(cx, cz)), cz], yaw, ledge: Wp(-35.0, 0.6, -6.83 + k * 1.05), stage: Wp(-62 - (k % 2) * 1.4, 0, -12 + k * 1.7) }); }
+    const gy = [0, 1, 2, 3].map(sv => { const px = cx - Math.sin(yaw) * sv, pz = cz - Math.cos(yaw) * sv; return Math.max(terrainY(px, pz), ry(px, pz)); });
+    AP.push({ fig, blk, cun: [cx, Math.max(...gy), cz], yaw, ledge: Wp(-35.0, 0.6, -6.83 + k * 1.05), stage: Wp(-62 - (k % 2) * 1.4, 0, -12 + k * 1.7) }); }
   const CC0 = AP.reduce((m, a) => [m[0] + a.cun[0] / 14, m[1] + a.cun[1] / 14, m[2] + a.cun[2] / 14], [0, 0, 0]), CC4 = AP.slice(0, 4).reduce((m, a) => [m[0] + a.cun[0] / 4, m[1] + a.cun[1] / 4, m[2] + a.cun[2] / 4], [0, 0, 0]);
   const CC = [0, 1, 2].map(i => (CC0[i] + CC4[i]) / 2);   // entre el montón y los cuatro ya tallados
   const DEMO = figG(3, true); scene.add(DEMO); { const p = Wp(-61, 0, 16); DEMO.position.set(...p); DEMO.rotation.y = (Math.atan2(-AX[0], -AX[1]) * 180 / Math.PI - 8) * Math.PI / 180; }
@@ -186,7 +197,7 @@ export async function init() {
     AP.forEach((a, k) => {
       const lift = ph.lift ? ph.lift[k] : 1, onStage = ph.stage ?? 1;
       if (ph.cuneta) { a.fig.visible = k < 4; if (a.blk) a.blk.visible = true;
-        const grp = k < 4 ? a.fig : a.blk; grp.position.set(...a.cun); grp.rotation.set(0, a.yaw, 0); grp.rotateX(-Math.PI / 2 + 0.12 * Math.sin(k)); grp.position.y += 0.35; return; }
+        const grp = k < 4 ? a.fig : a.blk; grp.position.set(...a.cun); grp.rotation.set(0, a.yaw, 0); grp.rotateX(-Math.PI / 2); grp.rotateY(0.25 * Math.sin(k * 2.3)); grp.position.y += 0.38; return; }
       if (a.blk) a.blk.visible = false; a.fig.visible = onStage > 0.5 || lift > 0;
       if (lift <= 0) { a.fig.position.set(...a.stage); a.fig.position.y += 0.3; a.fig.rotation.set(0, BG.rotation.y, 0); a.fig.rotateX(-Math.PI / 2); return; }
       const s = smr(lift), up = Math.sin(Math.PI * Math.min(1, s * 1.15)) * 9;
