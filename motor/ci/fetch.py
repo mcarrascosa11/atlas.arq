@@ -4,13 +4,13 @@ ROOT = os.environ.get('GITHUB_WORKSPACE', os.getcwd()); JOB = json.load(open(f'{
 log = []
 for it in JOB['fetch']:
     out = f"{ROOT}/{it['out']}"; os.makedirs(os.path.dirname(out), exist_ok=True); ok = False
-    for k in range(4):
+    for k in range(2):
         try:
             req = urllib.request.Request(it['url'], headers={'User-Agent': 'atlas-render/1.0 (github.com/mcarrascosa11/atlas.arq)'})
-            with urllib.request.urlopen(req, timeout=180) as r: data = r.read()
-            open(out, 'wb').write(data); log.append(f"ok {len(data)} B  {it['out']}"); ok = True; break
+            with urllib.request.urlopen(req, timeout=int(it.get('timeout', 90))) as r: data = r.read()
+            open(out, 'wb').write(data); log.append(f"ok {len(data)} B  {it['out']}"); print(log[-1], flush=True); ok = True; break
         except Exception as e:
-            err = str(e)[:200]; time.sleep(8 * (k + 1))
+            err = str(e)[:200]; time.sleep(5)
     if not ok: log.append(f"FALLO {it['out']}: {err}")
 os.makedirs(os.path.dirname(f"{ROOT}/{JOB['log']}"), exist_ok=True)
 open(f"{ROOT}/{JOB['log']}", 'w').write('\n'.join(log) + '\n'); print('\n'.join(log))
