@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>
+@font-face{font-family:'SG';src:url(fonts/sg700.woff2) format('woff2');font-weight:700}
+@font-face{font-family:'SG';src:url(fonts/sg700ext.woff2) format('woff2');font-weight:700;unicode-range:U+0100-024F}
+@font-face{font-family:'SG';src:url(fonts/sg500.woff2) format('woff2');font-weight:500}
+@font-face{font-family:'SG';src:url(fonts/sg500ext.woff2) format('woff2');font-weight:500;unicode-range:U+0100-024F}
+@font-face{font-family:'SM';src:url(fonts/sm400.woff2) format('woff2')}
+@font-face{font-family:'SM';src:url(fonts/sm400ext.woff2) format('woff2');unicode-range:U+0100-024F}
+html,body{margin:0;background:#F2F1EC;width:1080px;height:1920px;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px}
+#ov{position:absolute;left:0;top:0;width:1080px;height:1920px}
+#kicker{position:absolute;left:64px;top:150px;font:400 27px 'SM';letter-spacing:.06em;color:#E2401C}
+#title{position:absolute;left:62px;top:196px;width:900px;font:700 74px/1.04 'SG';color:#1A1B20;letter-spacing:-.01em}
+#topwrap{position:absolute;left:0;right:0;top:0;height:520px;background:linear-gradient(to top, rgba(242,241,236,0) 0%, rgba(242,241,236,.94) 34%, #F2F1EC 52%)}
+#subwrap{position:absolute;left:0;right:0;bottom:0;height:420px;background:linear-gradient(to bottom, rgba(242,241,236,0) 0%, rgba(242,241,236,.92) 38%, #F2F1EC 60%)}
+#sub{position:absolute;left:70px;right:70px;bottom:170px;font:700 50px/1.16 'SG';color:#1A1B20;text-align:center}
+.lab{font:400 23px 'SM';fill:#1A1B20;text-anchor:middle;paint-order:stroke;stroke:#F2F1EC;stroke-width:7px;letter-spacing:.04em}
+.maplab{font:400 27px 'SM';fill:#1A1B20;paint-order:stroke;stroke:#F2F1EC;stroke-width:8px;letter-spacing:.05em}
+.dim{font:400 27px 'SM';fill:#E2401C;text-anchor:middle;paint-order:stroke;stroke:#F2F1EC;stroke-width:7px}
+#cover{display:none;position:absolute;left:48px;top:246px}
+#cover .n{font:700 302px/0.9 'SG';color:#E2401C;letter-spacing:-.045em}
+#cover .t{font:700 66px/0.93 'SG';color:#1A1B20;margin-top:6px;width:640px;letter-spacing:-.025em}
+#cover .m{font:400 23px/1.6 'SM';color:#1A1B20;margin-top:38px}
+#cover .m b{font-weight:400;color:#E2401C}
+body.cover #kicker,body.cover #title,body.cover #sub,body.cover #subwrap,body.cover #topwrap,body.cover #ov{display:none}
+body.cover #cover{display:block}
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/","three-bvh-csg":"./node_modules/three-bvh-csg/src/index.js","three-mesh-bvh":"./node_modules/three-mesh-bvh/src/index.js"}}</script>
+</head><body>
+<div id="stage"></div><div id="topwrap"></div><div id="subwrap"></div>
+<svg id="ov" viewBox="0 0 1080 1920"></svg>
+<div id="kicker"></div><div id="title"></div><div id="sub"></div><div id="cover"><div class="n">011</div><div class="t">¿14 apóstoles en una cuneta?</div><div class="m">basílica de arantzazu · oiza, laorga y oteiza<br>oñati, ES · 1950 – 1969<br>escala <b>L</b></div></div>
+<script type="module">
+import { init } from "./v011.js";
+document.fonts.ready.then(() => init()).catch(e => { window.ERR = String(e.stack || e); });
+window.addEventListener('error', e => { window.ERR = String(e.error && e.error.stack || e.message); });
+</script>
+</body></html>
