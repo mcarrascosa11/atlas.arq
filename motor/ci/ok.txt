@@ -1,1 +1,1 @@
-video=011_arantzazu duracion=50.000000 lufs=-14.5 md5=dfb2c1c279cdc8a901155cdf94561f4f fecha=2026-10-28T11:02:17Z
+video=012_pompidou duracion=50.000000 lufs=-14.0 md5=116f098c5b17158761c1e6c9fb54164f fecha=2026-10-29T12:26:26Z
