@@ -1,7 +1,7 @@
 # Original cue for 012 (Centre Pompidou, 1977). Analog-synth homage to the French electronic music of the 1970s: a sequenced
 # arpeggio (square/saw, filtered), a warm string pad and metallic hits. 0–8 s: arpeggio in A minor; 8–13 s: 681 projects, quick
 # typewriter clicks thinning to one bell; 13–19 s: assembly, one metallic clank per portal frame (14); 19–24 s: escalator, the
-# arpeggio rises; 24–30 s: plaza, pad opens to C major; 30–38 s: "la refinería", low drone and pipe hits; 38–50 s: resolve.
+# arpeggio rises; 24–30 s: plaza, pad opens to C major (v2: 8.8 s skeleton, 13.4 s section cuts, 19.6 s plan); 30–38 s: "la refinería", low drone and pipe hits; 38–50 s: resolve.
 import numpy as np, scipy.signal as ss, wave, sys
 SR = 44100; DUR = 50.0; N = int(SR * DUR); rng = np.random.default_rng(12)
 BUS = {k: [np.zeros(N), np.zeros(N)] for k in ('arp', 'pad', 'hit', 'click', 'low')}
@@ -39,21 +39,20 @@ def arp(t0, t1, notes, amp=0.16, cut=2200, pan=0.25):
 # 0–8: arpegio en La menor
 arp(0.0, 8.2, [57, 64, 69, 72, 69, 64, 60, 64], 0.15, 1800)
 add(pad([45, 52, 57, 60], 8.6, 0.05), 0.0, bus='pad')
-# 8–13: 681 proyectos, clics de máquina de escribir que se aclaran; una campana para el ganador
-tt = 8.6
-while tt < 11.6: add(click(0.18 * (1 - (tt - 8.6) / 3.4)), tt + rng.normal(0, 0.01), pan=rng.uniform(-0.6, 0.6), bus='click'); tt += 0.05 + (tt - 8.6) * 0.03
-add(clank(mtof(81), 0.12), 12.2, bus='hit')
-add(pad([48, 55, 60, 64], 5.0, 0.04), 8.4, bus='pad')
-# 13–19: montaje, un golpe metálico por pórtico (14) mientras vuelve el arpegio
-for i in range(14): add(clank(mtof(45 + (i % 2) * 7), 0.11), 13.0 + i * 0.33, pan=-0.6 + i * 0.09, bus='hit')
-arp(13.0, 19.0, [57, 60, 64, 67, 69, 67, 64, 60], 0.13, 2000)
-add(pad([45, 52, 57, 64], 6.4, 0.05), 13.0, bus='pad')
-# 19–24: la escalera, el arpegio sube
-arp(19.0, 24.0, [57, 60, 64, 69, 72, 76, 79, 81], 0.14, 2800)
-add(pad([45, 52, 57, 60, 64], 5.4, 0.05), 19.0, bus='pad')
-# 24–30: la plaza, Do mayor y el filtro se abre
-arp(24.0, 30.0, [60, 64, 67, 72, 76, 72, 67, 64], 0.14, 3400)
-add(pad([48, 55, 60, 64, 67], 6.4, 0.07), 24.0, bus='pad')
+# 8.8–13: el esqueleto, un golpe metálico por pórtico (14) mientras sigue el arpegio
+for i in range(14): add(clank(mtof(45 + (i % 2) * 7), 0.11), 8.8 + i * 0.26, pan=-0.6 + i * 0.09, bus='hit')
+arp(8.4, 13.4, [57, 60, 64, 67, 69, 67, 64, 60], 0.13, 2000)
+add(pad([45, 52, 57, 64], 5.4, 0.05), 8.4, bus='pad')
+# 13.4–19.6: la sección, un corte seco por crujía (6) y el arpegio que se queda en el aire
+for k in range(6): add(clank(mtof(38 + (k % 2) * 5), 0.13), 14.0 + k * 0.48, pan=-0.3 + k * 0.12, bus='hit'); add(click(0.22), 14.0 + k * 0.48, bus='click')
+arp(13.4, 19.6, [57, 64, 67, 69, 67, 64], 0.11, 2400)
+add(pad([45, 52, 57, 62, 64], 6.6, 0.06), 13.2, bus='pad')
+# 19.6–25: la planta, el arpegio sube
+arp(19.6, 25.0, [57, 60, 64, 69, 72, 76, 79, 81], 0.14, 2800)
+add(pad([45, 52, 57, 60, 64], 5.8, 0.05), 19.4, bus='pad')
+# 25–30: la plaza, Do mayor y el filtro se abre
+arp(25.0, 30.0, [60, 64, 67, 72, 76, 72, 67, 64], 0.14, 3400)
+add(pad([48, 55, 60, 64, 67], 5.4, 0.07), 25.0, bus='pad')
 # 30–38: «la refinería», dron grave y golpes de tubería
 add(drone(mtof(33), 8.2, 0.09), 30.0, bus='low')
 for t in np.arange(30.4, 37.8, 0.75): add(clank(mtof(40 + int(rng.integers(0, 3)) * 3), 0.06), t, pan=rng.uniform(-0.5, 0.5), bus='hit')
