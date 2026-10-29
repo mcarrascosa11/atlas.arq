@@ -19,6 +19,12 @@ python -m playwright install --with-deps chromium > /dev/null
 echo "== datos"; bash "$DATA"
 echo "== fotogramas y portada"
 (cd motor/web && python -m http.server 8765 > /tmp/http.log 2>&1 &) ; sleep 2
+if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('coveronly') else 1)"; then   # modo solo portada: no rehace el vídeo
+  NFRAMES=0 python motor/ci/render_ci.py
+  echo "portada=$OUT md5=$(md5sum "portadas/$OUT.jpg" | cut -d' ' -f1) fecha=$(date -u +%FT%TZ)" > motor/ci/ok_portada.txt
+  git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  git add "portadas/$OUT.jpg" motor/ci/ok_portada.txt; git commit -m "$OUT: portada rehecha en GitHub Actions"; git pull --rebase -q && git push; echo "== portada lista"; exit 0
+fi
 python motor/ci/render_ci.py
 echo "== música y montaje"; bash motor/ci/enc_ci.sh "$MUSIC" "$OUT"
 git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
