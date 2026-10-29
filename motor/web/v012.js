@@ -69,6 +69,15 @@ export async function init() {
       for (let k = 0; k < n; k++) { const v0 = -VC + 3.5 + k * (2 * VC - 7) / n, v1 = v0 + (2 * VC - 7) / n; E.push(u, yb, v0, u, y, (v0 + v1) / 2, u, y, (v0 + v1) / 2, u, yb, v1); } }
     g.add(segs(E, lineMat(INK, 0.55))); g.add(segs(Et, lineMat(INK, LW.C)));
   }
+  // el edificio en discontinuas mientras fue aparcamiento: envolvente, pórticos y niveles; luego se va formando dentro
+  const ghostL = lineMat('#8E8B84', 1.0); ghostL.dashed = true; ghostL.dashSize = 1.8; ghostL.gapSize = 1.4;
+  const GHOST = new THREE.Group(); BG.add(GHOST);
+  { const E = [], u0 = U0 - 6, u1 = -U0 + 6;
+    for (const y of [0, 42]) E.push(u0, y, -VT, u1, y, -VT, u1, y, -VT, u1, y, VT, u1, y, VT, u0, y, VT, u0, y, VT, u0, y, -VT);
+    for (const [u, v] of [[u0, -VT], [u1, -VT], [u1, VT], [u0, VT]]) E.push(u, 0, v, u, 42, v);
+    for (let i = 0; i < NF; i++) { const u = U0 + i * BAY; for (const sv of [-1, 1]) E.push(u, 0, sv * VC, u, 42, sv * VC); E.push(u, 42, -VT, u, 42, VT); }
+    for (const y of LV.slice(0, 5)) for (const sv of [-1, 1]) E.push(u0, y, sv * VT, u1, y, sv * VT);
+    GHOST.add(segs(E, ghostL)); }
   // piel por crujías: forjados por nivel, cruces de fachada, montantes, conductos y chimeneas (el corte de la sección avanza crujía a crujía)
   const SKIN = new THREE.Group(); BG.add(SKIN); const SB = [], LVL = [], VENTS = []; const NB = NF - 1;
   const bayOf = (u) => Math.min(NB - 1, Math.max(0, Math.floor((u - U0) / BAY)));
@@ -138,6 +147,7 @@ export async function init() {
     const t = o.t ?? 0, ph = o.ph ?? {};
     const bld = ph.build ?? 1; FR.forEach((g, i) => { const f = smr(clamp(bld * (NF + 4) - i * 1.0, 0, 1)); g.visible = f > 0.01; g.scale.y = Math.max(0.001, f); });
     const sk = ph.skin ?? 1; SKIN.visible = sk > 0.01; SKIN.scale.y = Math.max(0.001, sk);
+    const gh = ph.ghost ?? 0; GHOST.visible = gh > 0.02; setLineOpacity(ghostL, gh);
     const nc = Math.round(ph.cut ?? 0), cutU = U0 + nc * BAY;                     // crujías quitadas por delante del corte
     FR.forEach((g, i) => { if (U0 + i * BAY < cutU - 0.01) g.visible = false; });
     SB.forEach((g, k) => { g.visible = k >= nc; }); PLS.forEach((g, k) => { g.visible = k >= nc; });
@@ -200,7 +210,8 @@ export async function init() {
       plan: tt > 20.3 && tt < 25.6 ? 1 : 0,
       plaza: tt < 3.7 ? 1 : tt < 19.6 ? (tt < 8.4 ? 1 - smr(seg(tt, 3.7, 4.4)) : 0) : smr(seg(tt, 19.6, 20.8)),
       people: tt < 3.7 ? 1 : tt < 20.0 ? (tt < 8.4 ? 1 - smr(seg(tt, 3.7, 4.2)) : 0) : smr(seg(tt, 20.0, 24.0)),
-      cars: tt < 4.4 ? 0 : tt < 8.6 ? smr(seg(tt, 4.4, 6.4)) : 1 - smr(seg(tt, 8.6, 9.6)), boards: 0 };
+      cars: tt < 4.4 ? 0 : tt < 8.6 ? smr(seg(tt, 4.4, 6.4)) : 1 - smr(seg(tt, 8.6, 9.6)), boards: 0,
+      ghost: tt < 3.7 ? 0 : tt < 12.0 ? smr(seg(tt, 3.8, 4.6)) : 1 - smr(seg(tt, 12.0, 13.2)) };
     const dims = [], labels = [];
     const cutNow = U0 + Math.round(ph.cut) * BAY;
     const f48 = fw(tt, 15.8, 19.4, 0.3); if (f48 > 0) dims.push([Wp(cutNow, 23.5, -VC), Wp(cutNow, 23.5, VC), f48, '48 m sin pilares']);
