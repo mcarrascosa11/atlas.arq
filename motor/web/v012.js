@@ -174,6 +174,6 @@ export async function init() {
       ph, labels, dims, title: tw, titleOp: to, kick: kick(tt) });
   };
   window.renderCover = () => { document.body.classList.add('cover');
-    return window.shot({ t: 45, tg: Wp(-20, 46, -36), z: 47, az: WEST + 10, el: 10, ctx: true, ph: {}, kick: '', title: '' }); };
+    return window.shot({ t: 45, tg: Wp(0, 50, -36), z: 84, az: WEST + 10, el: 12, ctx: true, ph: {}, kick: '', title: '' }); };
   window.READY = true;
 }
