@@ -1,1 +1,1 @@
-video=012_pompidou duracion=50.000000 lufs=-14.0 md5=116f098c5b17158761c1e6c9fb54164f fecha=2026-10-29T12:26:26Z
+video=012_pompidou duracion=50.000000 lufs=-14.1 md5=9a01b29d27deda55ec1c37925cd02379 fecha=2026-10-29T14:11:19Z
