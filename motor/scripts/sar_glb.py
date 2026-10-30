@@ -7,19 +7,27 @@ sc = trimesh.load(f'{ROOT}/datos/sarnago/modelos/sarnago_1960_morfologia.glb'); 
 for n in sc.graph.nodes_geometry:
     T, g = sc.graph[n]; m = sc.geometry[g].copy(); m.apply_transform(T); m.vertices[:, 0] += t[0]; m.vertices[:, 2] += t[1]; M[n] = m
 TER, ED = M['terreno'], M['edificios_1960']
+# fuera los faldones verticales del borde de la maqueta: se pisaban con lo demás y parpadeaban
+TER.update_faces(np.abs(TER.face_normals[:, 1]) > 0.25); TER.remove_unreferenced_vertices()
 # rejilla de alturas del terreno (1 m) por rayos verticales
 xs = np.arange(-170, 171, 1.0); zs = np.arange(-125, 85, 1.0); X, Z = np.meshgrid(xs, zs)
 orig = np.c_[X.ravel(), np.full(X.size, 200.0), Z.ravel()]; dirs = np.tile([0, -1.0, 0], (X.size, 1))
 loc, iray, _ = TER.ray.intersects_location(orig, dirs, multiple_hits=False)
 Hh = np.full(X.size, np.nan); Hh[iray] = loc[:, 1]; Hh = Hh.reshape(X.shape)
-from scipy.ndimage import generic_filter
-mask = np.isnan(Hh); Hh[mask] = np.nanmean(Hh); print('rejilla', Hh.shape, 'sin dato', int(mask.sum()), 'alturas', round(float(np.nanmin(Hh)), 1), round(float(np.nanmax(Hh)), 1))
+from scipy.ndimage import distance_transform_edt
+mask = np.isnan(Hh); idx = distance_transform_edt(mask, return_distances=False, return_indices=True); Hh = Hh[tuple(idx)]      # fuera de la maqueta, la altura del borde más cercano
+valid = (~mask).astype(int); print('rejilla', Hh.shape, 'sin dato', int(mask.sum()), 'alturas', round(float(np.nanmin(Hh)), 1), round(float(np.nanmax(Hh)), 1))
 # curvas de nivel cada metro
 cont = []
+from shapely.geometry import LineString
+from shapely.ops import linemerge
 for h in np.arange(np.ceil(TER.vertices[:, 1].min()), TER.vertices[:, 1].max(), 1.0):
-    sec = TER.section(plane_origin=[0, h, 0], plane_normal=[0, 1, 0])
-    if sec is None: continue
-    for e in sec.discrete: cont.append({'h': float(h), 'l': [[round(float(p[0]), 1), round(float(p[2]), 1)] for p in e[::2]]})
+    sg = trimesh.intersections.mesh_plane(TER, plane_normal=[0, 1, 0], plane_origin=[0, h, 0])
+    if len(sg) == 0: continue
+    mm = linemerge([LineString(q[:, [0, 2]]) for q in sg])
+    for e in getattr(mm, 'geoms', [mm]):
+        cc = list(e.coords)
+        if len(cc) >= 2: cont.append({'h': float(h), 'l': [[round(float(x), 1), round(float(z), 1)] for x, z in (cc[::2] + ([cc[-1]] if len(cc) % 2 == 0 else []))]})
 # edificios por piezas, emparejadas con el plano
 polys = [Polygon(b['r']).buffer(0) for b in D['blds']]
 pieces = []; angs = []
@@ -40,9 +48,12 @@ for c in ED.split(only_watertight=False):
     eo = trimesh.grouping.group_rows(c.edges_sorted, require_count=1); E2 = c.vertices[c.edges_sorted[eo]].reshape(-1, 3)
     n = c.face_normals; up = n[:, 1]; roof = (up > 0.3) & (up < 0.97)
     if roof.any(): angs += list(np.degrees(np.arccos(up[roof])))
-    pieces.append({'b': k, 'y0': round(float(c.vertices[:, 1].min()), 2), 'tri': np.round(c.vertices[c.faces].reshape(-1), 2).tolist(), 'e': np.round(np.r_[E, E2].reshape(-1), 2).tolist()})
+    y0 = float(c.vertices[:, 1].min()); low = c.vertices[c.vertices[:, 1] < y0 + 0.15][:, [0, 2]]
+    fp = MultiPoint([tuple(p) for p in (low if len(low) >= 3 else c.vertices[:, [0, 2]])]).convex_hull
+    foot = [[round(float(x), 2), round(float(z), 2)] for x, z in list(fp.exterior.coords)[:-1]] if fp.geom_type == 'Polygon' else []
+    pieces.append({'f': foot, 'b': k, 'y0': round(float(c.vertices[:, 1].min()), 2), 'tri': np.round(c.vertices[c.faces].reshape(-1), 2).tolist(), 'e': np.round(np.r_[E, E2].reshape(-1), 2).tolist()})
 print('piezas', len(pieces), 'sin edificio del plano', sum(p['b'] < 0 for p in pieces), '| pendiente de cubierta: mediana', round(float(np.median(angs)), 1), 'º, p25-p75', np.percentile(angs, [25, 75]).round(1))
-json.dump({'grid': {'x0': -170, 'z0': -125, 'd': 1.0, 'nx': len(xs), 'nz': len(zs), 'h': np.round(Hh, 2).ravel().tolist()}, 'cont': cont,
+json.dump({'grid': {'x0': -170, 'z0': -125, 'd': 1.0, 'nx': len(xs), 'nz': len(zs), 'h': np.round(Hh, 2).ravel().tolist(), 'v': valid.ravel().tolist()}, 'cont': cont,
            'ter': np.round(TER.vertices[TER.faces].reshape(-1), 2).tolist(), 'pieces': pieces, 'roofDeg': round(float(np.median(angs)), 1)}, open(f'{ROOT}/motor/web/vsar3d.json', 'w'), separators=(',', ':'))
 import os; print('vsar3d.json', round(os.path.getsize(f'{ROOT}/motor/web/vsar3d.json') / 1e6, 2), 'MB')
 r30 = D['blds'][30]['r']; print('edificio 30 (El Refugio):', r30, 'área', round(Polygon(r30).area, 1))
