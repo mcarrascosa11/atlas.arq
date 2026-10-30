@@ -37,7 +37,7 @@ export async function init() {
   const D = await fetch('v013.json').then(r => r.json());
   const paperM = flatM('#F6F5F1'), inkM = flatM(INK), redM = fillMat(RED, { hatch: 0, side: 0.93, shade: 0.8 }), seaM = flatM('#DCE3E5'), poolM = flatM('#C9DCE0');
   const sandM = flatM('#F2EBDD'), roadM = flatM('#ECEAE4'), rockM = fillMat('#F2F0EB', { hatch: 0, side: 0.88, shade: 0.72 }), casaM = fillMat('#F7F6F2', { hatch: 0, side: 0.92, shade: 0.8 });
-  const bldM = fillMat('#F6F5F1', { hatch: 0, side: 0.94, shade: 0.86 }), floorM = flatM('#E9EDEC'), secInk = fillMat(INK, { hatch: 0, side: 1, shade: 1, double: true });
+  const graniteM = fillMat('#EEE7DC', { hatch: 0, side: 0.9, shade: 0.78 }), bldM = fillMat('#F6F5F1', { hatch: 0, side: 0.94, shade: 0.86 }), floorM = flatM('#E9EDEC'), secInk = fillMat(INK, { hatch: 0, side: 1, shade: 1, double: true }), earthM = fillMat('#DDD8CE', { hatch: 0, side: 1, shade: 1, double: true });
   const A = D.coastAxis, N = D.nrm, C = D.C, S = D.sec;
   const side = (x, z) => (x - C[0]) * A[0] + (z - C[1]) * A[1];                 // > 0: detrás del corte (hacia el NO)
   const AX = D.grid.ax, HH = D.grid.h, nG = AX.length;
@@ -51,15 +51,16 @@ export async function init() {
   const triH = (o, holes, y, A2) => { const v2 = o.map(p => new THREE.Vector2(p[0], p[1])); const hv = (holes || []).map(h => h.map(p => new THREE.Vector2(p[0], p[1]))); let f; try { f = THREE.ShapeUtils.triangulateShape(v2, hv); } catch (e) { return; }
     const all = [...o, ...(holes || []).flat()]; for (const t of f) { const p = t.map(i => [all[i][0], y, all[i][1]]); push3(A2.P, A2.B, A2.T, -1, 30, ...upTri(p[0], p[1], p[2])); } };
   // ---------- relieve (rejilla estirada), con hueco en las piscinas; mitad cercana y lejana ----------
-  { const An = mk(), Af = mk();
+  { const An = mk(), Af = mk(), Rn = mk(), Rf = mk();
     for (let j = 0; j < nG - 1; j++) for (let i = 0; i < nG - 1; i++) { const x0 = AX[i], x1 = AX[i + 1], z0 = AX[j], z1 = AX[j + 1];
       if (inPool((x0 + x1) / 2, (z0 + z1) / 2)) continue;
       const p00 = [x0, HH[j][i], z0], p10 = [x1, HH[j][i + 1], z0], p01 = [x0, HH[j + 1][i], z1], p11 = [x1, HH[j + 1][i + 1], z1];
-      const T = Math.min(side(x0, z0), side(x1, z0), side(x0, z1), side(x1, z1)) > 0 ? Af : An;
+      const far = Math.min(side(x0, z0), side(x1, z0), side(x0, z1), side(x1, z1)) > 0, rk = (D.rh[j][i] + D.rh[j][i + 1] + D.rh[j + 1][i] + D.rh[j + 1][i + 1]) > 0.6;
+      const T = rk ? (far ? Rf : Rn) : (far ? Af : An);
       push3(T.P, T.B, T.T, -1, 30, ...upTri(p00, p01, p11)); push3(T.P, T.B, T.T, -1, 30, ...upTri(p00, p11, p10)); }
-    NEAR.add(mesh(An, paperM)); FAR.add(mesh(Af, paperM));
+    NEAR.add(mesh(An, paperM)); FAR.add(mesh(Af, paperM)); NEAR.add(mesh(Rn, graniteM)); FAR.add(mesh(Rf, graniteM));
     const En = [], Ef = []; for (const c of D.cont) for (let k = 0; k < c.l.length - 1; k++) { const a = c.l[k], b = c.l[k + 1]; ((side((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) > 0) ? Ef : En).push(a[0], c.h + 0.06, a[1], b[0], c.h + 0.06, b[1]); }
-    NEAR.add(segs(En, lineMat('#D3CFC5', 0.45))); FAR.add(segs(Ef, lineMat('#D3CFC5', 0.45))); }
+    NEAR.add(segs(En, lineMat('#BDB5A8', 0.5))); FAR.add(segs(Ef, lineMat('#BDB5A8', 0.5))); }
   // ---------- playa, calles y avenida ----------
   { const An = mk(), Af = mk(); for (const r of D.beach) { const cx = r.reduce((m, p) => m + p[0], 0) / r.length, cz = r.reduce((m, p) => m + p[1], 0) / r.length; tri(r, 0, side(cx, cz) > 0 ? Af : An, (x, z) => hAt(x, z) + 0.05); }
     NEAR.add(mesh(An, sandM)); FAR.add(mesh(Af, sandM));
@@ -89,10 +90,10 @@ export async function init() {
   { const E = []; for (let d = -300; d <= -6; d += WSP) for (let u = -520; u < 520; u += 8) { const a = [C[0] + A[0] * u + N[0] * d, C[1] + A[1] * u + N[1] * d], b = [C[0] + A[0] * (u + 5.5) + N[0] * d, C[1] + A[1] * (u + 5.5) + N[1] * d]; E.push(a[0], 0.06, a[1], b[0], 0.06, b[1]); }
     WAVES.add(segs(E, lineMat('#AFC0C5', 0.6))); }
   // ---------- piscinas, muros y casa de baños ----------
-  const WL = 1.6, PF = S.floor; const POOLS = new THREE.Group(); WHOLE.add(POOLS); const POOLSF = new THREE.Group(); FARONLY.add(POOLSF); const WATER = [], WALLS = [];
-  for (const pp of D.pools) { const Aw = mk(), Ew = []; extrude([pp.out, pp.r], PF, 2.0, Aw, Ew, { corner: 18 }); const w = mesh(Aw, casaM), l = segs(Ew, lineMat(INK, LW.B)); POOLS.add(w, l); WALLS.push(w);
+  const WL = 2.0, PF = S.floor; const POOLS = new THREE.Group(); WHOLE.add(POOLS); const POOLSF = new THREE.Group(); FARONLY.add(POOLSF); const WATER = [], WALLS = [];
+  for (const pp of D.pools) { const Aw = mk(), Ew = []; extrude([pp.out, pp.r], PF, 2.3, Aw, Ew, { corner: 18 }); const w = mesh(Aw, casaM), l = segs(Ew, lineMat(INK, LW.B)); POOLS.add(w, l); WALLS.push(w);
     const Af = mk(); tri(pp.r, PF + 0.02, Af); POOLS.add(mesh(Af, floorM)); const Aq = mk(); tri(pp.r, 0, Aq); const wm = mesh(Aq, poolM); POOLS.add(wm); WATER.push(wm);
-    for (const q of pp.bandFar) { const Ab = mk(), Eb = []; extrude([q.o, ...q.h], PF, 2.0, Ab, Eb, { corner: 18 }); POOLSF.add(mesh(Ab, casaM), segs(Eb, lineMat(INK, LW.B))); }
+    for (const q of pp.bandFar) { const Ab = mk(), Eb = []; extrude([q.o, ...q.h], PF, 2.3, Ab, Eb, { corner: 18 }); POOLSF.add(mesh(Ab, casaM), segs(Eb, lineMat(INK, LW.B))); }
     for (const q of pp.waterFar) { const Aq2 = mk(); triH(q.o, q.h, 0, Aq2); const wm2 = mesh(Aq2, poolM); POOLSF.add(wm2); WATER.push(wm2); } }
   const MUROS = new THREE.Group(); scene.add(MUROS);
   { const An = mk(), Af = mk(), En = [], Ef = []; for (const [a, b] of D.muros) { const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1, nx = -dz / l * 0.35, nz = dx / l * 0.35;
@@ -100,8 +101,26 @@ export async function init() {
       extrude([ring], y0, Math.max(y0 + 1.8, 2.0), far ? Af : An, far ? Ef : En, { corner: 30 }); }
     const mn = mesh(An, casaM), mf = mesh(Af, casaM), MN = new THREE.Group(); MN.add(mn, segs(En, lineMat(INK, LW.B))); MUROS.add(MN, mf, segs(Ef, lineMat(INK, LW.B))); MUROS.userData = { MN }; WALLS.push(mn, mf); }
   const CASA = new THREE.Group(); WHOLE.add(CASA); const CASAF = new THREE.Group(); FARONLY.add(CASAF);
-  { const Ac = mk(), Ec = []; extrude([D.casa], S.casa0, S.casa1, Ac, Ec, { corner: 20 }); CASA.add(mesh(Ac, casaM), segs(Ec, lineMat(INK, LW.B)));
-    for (const q of D.casaFar) { const A2 = mk(), E2 = []; extrude([q.o, ...q.h], S.casa0, S.casa1, A2, E2, { corner: 20 }); CASAF.add(mesh(A2, casaM), segs(E2, lineMat(INK, LW.B))); } }
+  // vestuarios: muros de hormigón y cubiertas de cobre de poca pendiente (bajan hacia el mar), unos 2 m por debajo de la avenida
+  const CR = D.casaRoof, roofM = fillMat('#BAC3BB', { hatch: 0, side: 0.9, shade: 0.76 });
+  const roofY = (x, z) => { const sv = (x - CR.O[0]) * CR.M[0] + (z - CR.O[1]) * CR.M[1]; return CR.lo + (CR.hi - CR.lo) * Math.min(1, Math.max(0, (sv - CR.tSea) / (CR.tIn - CR.tSea))); };
+  const casaBuild = (ring, holes, G) => { const Aw = mk(), E = [];
+    for (const r of [ring, ...(holes || [])]) for (let k = 0; k < r.length; k++) { const a = r[k], b = r[(k + 1) % r.length], ya = roofY(a[0], a[1]), yb = roofY(b[0], b[1]);
+      const p0 = [a[0], S.casa0, a[1]], p1 = [a[0], ya, a[1]], p2 = [b[0], yb, b[1]], p3 = [b[0], S.casa0, b[1]];
+      push3(Aw.P, Aw.B, Aw.T, S.casa0, 9.5, p0, p1, p2); push3(Aw.P, Aw.B, Aw.T, S.casa0, 9.5, p0, p2, p3); push3(Aw.P, Aw.B, Aw.T, S.casa0, 9.5, p0, p2, p1); push3(Aw.P, Aw.B, Aw.T, S.casa0, 9.5, p0, p3, p2);
+      E.push(...p1, ...p2, ...p0, ...p3, ...p0, ...p1); }
+    const Ar = mk(), v2 = ring.map(p => new THREE.Vector2(p[0], p[1])), hv = (holes || []).map(h => h.map(p => new THREE.Vector2(p[0], p[1]))), all = [ring, ...(holes || [])].flat(); let f = [];
+    try { f = THREE.ShapeUtils.triangulateShape(v2, hv); } catch (e) { }
+    for (const t of f) { const p = t.map(i => [all[i][0], roofY(all[i][0], all[i][1]) + 0.02, all[i][1]]); push3(Ar.P, Ar.B, Ar.T, 8, 9.5, ...upTri(p[0], p[1], p[2])); }
+    G.add(mesh(Aw, casaM), mesh(Ar, roofM), segs(E, lineMat(INK, LW.B))); };
+  casaBuild(D.casa, [], CASA); for (const q of D.casaFar) casaBuild(q.o, q.h, CASAF);
+  // muro a 45º que protege la terraza del bar del viento del norte
+  { const [a, b] = D.muro45, dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz), nx = -dz / l * 0.2, nz = dx / l * 0.2; const Am = mk(), Em = [];
+    extrude([[[a[0] + nx, a[1] + nz], [b[0] + nx, b[1] + nz], [b[0] - nx, b[1] - nz], [a[0] - nx, a[1] - nz]]], 3.0, S.casa0 + 2.0, Am, Em, { corner: 30 });
+    const far = side((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) > 0; CASA.add(mesh(Am, casaM), segs(Em, lineMat(INK, LW.B))); if (far) CASAF.add(mesh(Am, casaM), segs(Em, lineMat(INK, LW.B))); }
+  // terraza de la casa de baños, a la cota del suelo de los vestuarios
+  { const At = mk(), Et = []; if (D.terr.length > 2) { extrude([D.terr], 3.0, S.casa0, At, Et, { corner: 25 }); CASA.add(mesh(At, casaM), segs(Et, lineMat(INK, LW.C))); }
+    for (const q of D.terrFar) { const A2 = mk(), E2 = []; extrude([q.o, ...q.h], 3.0, S.casa0, A2, E2, { corner: 25 }); CASAF.add(mesh(A2, casaM), segs(E2, lineMat(INK, LW.C))); } }
   // en discontinuas: lo que todavía no existe (antes de 1961)
   const ghostL = lineMat('#8E8B84', 1.0); ghostL.dashed = true; ghostL.dashSize = 0.9; ghostL.gapSize = 0.7; const GHOST = new THREE.Group(); scene.add(GHOST);
   { const E = []; const ring = (r, y) => { for (let k = 0; k < r.length; k++) { const a = r[k], b = r[(k + 1) % r.length]; E.push(a[0], y, a[1], b[0], y, b[1]); } };
@@ -120,12 +139,39 @@ export async function init() {
   const P3 = (t, y) => [C[0] + N[0] * t - A[0] * 0.08, y, C[1] + N[1] * t - A[1] * 0.08];
   { const poly = (pts, A2) => { const v2 = pts.map(p => new THREE.Vector2(p[0], p[1])); let f; try { f = THREE.ShapeUtils.triangulateShape(v2, []); } catch (e) { return; }
       for (const t of f) { const q = t.map(i => P3(pts[i][0], pts[i][1])); push3(A2.P, A2.B, A2.T, -30, 30, q[0], q[1], q[2]); push3(A2.P, A2.B, A2.T, -30, 30, q[0], q[2], q[1]); } };
-    const Ak = mk(); poly(S.poly, Ak); for (const [t0, t1, y0, y1] of S.rects) poly([[t0, y0], [t1, y0], [t1, y1], [t0, y1]], Ak); SEC.add(mesh(Ak, secInk));
+    const top = S.poly.slice(0, S.poly.length - 2); const Ak = mk(), Ag = mk();
+    const quad = (A2, a, b, c, d) => { const q = [a, b, c, d].map(p => P3(p[0], p[1])); push3(A2.P, A2.B, A2.T, -30, 30, q[0], q[1], q[2]); push3(A2.P, A2.B, A2.T, -30, 30, q[0], q[2], q[3]); push3(A2.P, A2.B, A2.T, -30, 30, q[0], q[2], q[1]); push3(A2.P, A2.B, A2.T, -30, 30, q[0], q[3], q[2]); };
+    for (let k = 0; k < top.length - 1; k++) { const a = top[k], b = top[k + 1];
+      quad(Ak, a, b, [b[0], b[1] - 0.9], [a[0], a[1] - 0.9]);                                              // línea de terreno cortada
+      quad(Ag, [a[0], a[1] - 0.9], [b[0], b[1] - 0.9], [b[0], -5], [a[0], -5]); }                         // tierra
+    for (const [t0, t1, y0, y1] of S.rects) poly([[t0, y0], [t1, y0], [t1, y1], [t0, y1]], Ak);
+    if (S.roof) poly(S.roof, Ak);
+    SEC.add(mesh(Ak, secInk)); const gm = mesh(Ag, earthM); gm.position.set(-A[0] * 0.03, 0, -A[1] * 0.03); SEC.add(gm);
     const Aw = mk(); const seaTop = 0.45; const sw = S.poly.filter(p => p[0] <= S.pa); poly([...sw.map(p => [p[0], p[1]]).reverse(), [sw[0][0], seaTop], [S.pa, seaTop]].reverse(), Aw);
     poly([[S.pa, S.floor], [S.pb, S.floor], [S.pb, WL], [S.pa, WL]], Aw); const wm = mesh(Aw, poolM); wm.position.set(-A[0] * 0.02, 0, -A[1] * 0.02); SEC.add(wm);
-    const yv = (() => { let best = D.prof[0]; for (const p of D.prof) if (Math.abs(p[0] - 80) < Math.abs(best[0] - 80)) best = p; return best[1]; })();
-    const sl = lineMat(RED, 2.2); sl.dashed = true; sl.dashSize = 1.4; sl.gapSize = 1.0; const a = P3(80, yv + 1.55), b = P3(-150, yv + 1.55); SEC.add(segs([...a, ...b], sl));
-    const m = new THREE.Mesh(manG, pplM); m.position.set(...P3(80.6, yv)); SEC.add(m); SEC.userData = { yv }; }
+    const yv = S.avy + 0.15;
+    const sl = lineMat(RED, 2.2); sl.dashed = true; sl.dashSize = 1.4; sl.gapSize = 1.0; const a = P3(S.av0 - 1.2, yv + 1.55), b = P3(-150, yv + 1.55); SEC.add(segs([...a, ...b], sl));
+    const m = new THREE.Mesh(manG, pplM); m.position.set(...P3(S.av0 - 1.0, yv)); SEC.add(m); SEC.userData = { yv }; }
+  // muro de contención de la avenida y rampa de entrada: se baja entre muros desde la acera hasta el suelo de los vestuarios
+  const CD = D.corr, atB = (u, t, y) => [CR.O[0] + CR.B[0] * u + CR.M[0] * t, y, CR.O[1] + CR.B[1] * u + CR.M[1] * t];
+  const ENT = new THREE.Group(); scene.add(ENT);
+  { const Aw = mk(), Ew = [], Ar = mk(), Er = []; const t0 = CD.tIn + 3.2, t1 = t0 + 0.45;
+    const ring = [[CD.uS - 2, t0], [CD.uN + 2, t0], [CD.uN + 2, t1], [CD.uS - 2, t1]].map(([u, t]) => { const p = atB(u, t, 0); return [p[0], p[2]]; });
+    extrude([ring], S.casa0 - 0.4, 8.95, Aw, Ew, { corner: 30 });
+    const uA = CD.uN - 1.5, uB = CD.uN - 22, ta = CD.tIn + 0.1, tb = CD.tIn + 3.15;
+    const q = [atB(uA, ta, 8.75), atB(uA, tb, 8.75), atB(uB, tb, S.casa0 + 0.02), atB(uB, ta, S.casa0 + 0.02)];
+    push3(Ar.P, Ar.B, Ar.T, 6, 9, ...upTri(q[0], q[1], q[2])); push3(Ar.P, Ar.B, Ar.T, 6, 9, ...upTri(q[0], q[2], q[3])); Er.push(...q[0], ...q[1], ...q[1], ...q[2], ...q[2], ...q[3], ...q[3], ...q[0]);
+    for (let k = 1; k < 14; k++) { const f = k / 14, a = [uA + (uB - uA) * f, ta], b = [uA + (uB - uA) * f, tb], y = 8.75 + (S.casa0 - 8.75) * f; Er.push(...atB(a[0], a[1], y + 0.01), ...atB(b[0], b[1], y + 0.01)); }
+    const fl = [atB(uB, ta, S.casa0 + 0.02), atB(uB, tb, S.casa0 + 0.02), atB(CD.uS - 1, tb, S.casa0 + 0.02), atB(CD.uS - 1, ta, S.casa0 + 0.02)];
+    push3(Ar.P, Ar.B, Ar.T, 6, 9, ...upTri(fl[0], fl[1], fl[2])); push3(Ar.P, Ar.B, Ar.T, 6, 9, ...upTri(fl[0], fl[2], fl[3]));
+    ENT.add(mesh(Aw, casaM), segs(Ew, lineMat(INK, LW.B)), mesh(Ar, flatM('#F3F1EA')), segs(Er, lineMat('#9C998F', 0.6)));
+    for (const f of [0.15, 0.32, 0.47, 0.66, 0.84]) { const u = uA + (uB - uA) * f, t = ta + 0.9 + (f * 7 % 1.3), y = 8.75 + (S.casa0 - 8.75) * f; const m = new THREE.Mesh(manG, pplM); m.position.set(...atB(u, t, y)); ENT.add(m); } }
+  // el agua: se toma del mar, se trata en la casa y llega a la piscina (esquema)
+  const pipeL = lineMat(RED, 3.0); pipeL.dashed = true; pipeL.dashSize = 1.6; pipeL.gapSize = 1.1; const PIPE = new THREE.Group(); scene.add(PIPE);
+  { const p0 = [C[0] - N[0] * 22 + A[0] * 6, 0.9, C[1] - N[1] * 22 + A[1] * 6], p1 = atB(CD.uS + 8, CD.tSea - 0.5, S.casa0 + 0.6), p2 = [C[0] + N[0] * 4, 2.3, C[1] + N[1] * 4];
+    const pts = []; const pathPts = [p0, [ (p0[0] + p1[0]) / 2, 3.2, (p0[2] + p1[2]) / 2 ], p1, [ (p1[0] + p2[0]) / 2, 4.0, (p1[2] + p2[2]) / 2 ], p2];
+    for (let k = 0; k < pathPts.length - 1; k++) pts.push(...pathPts[k], ...pathPts[k + 1]);
+    const L = segs(pts, pipeL); PIPE.add(L); }
   scene.traverse(o => { o.frustumCulled = false; });
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), sm = (x) => { x = clamp(x); return x * x * (3 - 2 * x); }, smr = (x) => { x = clamp(x); return x * x * x * (x * (x * 6 - 15) + 10); };
   const seg = (t, a, b) => clamp((t - a) / (b - a)), lerp = (a, b, u) => a + (b - a) * u, fw = (t, a, b, f = 0.3) => Math.min(sm(seg(t, a, a + f)), 1 - sm(seg(t, b - f, b)));
@@ -140,6 +186,7 @@ export async function init() {
     for (const w of WALLS) w.material = red > 0.5 ? redM : casaM; MUROS.userData.MN.visible = !sec;
     const wf = ph.water ?? 1; for (const w of WATER) { w.visible = wf > 0.02; w.position.y = PF + (WL - PF) * smr(wf); }
     const gh = ph.ghost ?? 0; GHOST.visible = gh > 0.02; setLineOpacity(ghostL, gh);
+    const pp = ph.pipe ?? 0; PIPE.visible = pp > 0.02; setLineOpacity(pipeL, pp); pipeL.dashOffset = -t * 2.4; ENT.visible = !sec || true;
     const pe = ph.people ?? 1; PPL.forEach((p, k) => { let on = pe > p.a; if (sec && side(p.x, p.z) <= 0) on = false; if (p.kind === 'swim' && wf < 0.95) on = false; p.m.visible = on; if (!on) return;
       if (p.kind === 'swim') p.m.position.set(p.x + Math.sin(t * 0.6 + p.ph) * 0.8, WL - 1.32 + Math.sin(t * 2 + p.ph) * 0.05, p.z + Math.cos(t * 0.5 + p.ph) * 0.8);
       else if (p.kind === 'walk') { const d = p.sp * (t - 20); p.m.position.set(p.x + p.dx * d, hAt(p.x + p.dx * d, p.z + p.dz * d) + 0.1, p.z + p.dz * d); }
@@ -160,43 +207,47 @@ export async function init() {
   // ================= línea de tiempo (50 s) =================
   const azOf = (dx, dz) => Math.atan2(dx, dz) * 180 / Math.PI;
   const at = (t, y, u = 0) => [C[0] + N[0] * t + A[0] * u, y, C[1] + N[1] * t + A[1] * u];
-  const SEAV = azOf(-N[0] * 0.86 + A[0] * 0.5, -N[1] * 0.86 + A[1] * 0.5), SECV = azOf(-A[0] * 0.77 - N[0] * 0.64, -A[1] * 0.77 - N[1] * 0.64), PLANV = azOf(-A[0], -A[1] + 1e-4), LANDV = azOf(N[0] * 0.8 - A[0] * 0.6, N[1] * 0.8 - A[1] * 0.6);
+  const HOOKV = azOf(-N[0] * 0.55 - A[0] * 0.83, -N[1] * 0.55 - A[1] * 0.83), SECF = azOf(-A[0], -A[1]), PLANV = azOf(-A[0], -A[1] + 1e-4), LANDV = azOf(N[0] * 0.8 - A[0] * 0.6, N[1] * 0.8 - A[1] * 0.6);
+  const CORRV = azOf(CR.B[0], CR.B[1]), REVV = azOf(CR.M[0] * 0.8 + CR.B[0] * 0.6, CR.M[1] * 0.8 + CR.B[1] * 0.6), SEAV = HOOKV;
   const K = [
-    { t: 0.0, tg: at(8, 2, 4), z: 56, az: SEAV, el: 34 },
-    { t: 3.6, tg: at(8, 2, 2), z: 62, az: SEAV + 6, el: 30 },
-    { t: 8.6, tg: at(6, 1, 0), z: 60, az: SEAV + 12, el: 36 },
-    { t: 13.6, tg: at(10, 2, -2), z: 54, az: SEAV + 16, el: 40 },
-    { t: 15.2, tg: at(30, 22, -8), z: 112, az: SECV, el: 34 },
-    { t: 20.8, tg: at(32, 22, -6), z: 106, az: SECV + 5, el: 32 },
-    { t: 22.6, tg: at(16, 0, -14), z: 62, az: PLANV, el: 89.4 },
-    { t: 26.8, tg: at(18, 0, -12), z: 58, az: PLANV, el: 89.4 },
-    { t: 28.4, tg: at(-6, 1, -2), z: 26, az: SEAV - 20, el: 22 },
-    { t: 32.8, tg: at(0, 1, 2), z: 30, az: SEAV - 10, el: 24 },
-    { t: 34.6, tg: at(30, 4, 0), z: 46, az: LANDV, el: 30 },
-    { t: 39.8, tg: at(24, 4, 6), z: 50, az: LANDV + 8, el: 32 },
-    { t: 46.5, tg: at(260, 0, 0), z: 560, az: SEAV + 10, el: 40 },
-    { t: 50.0, tg: at(300, 0, 0), z: 620, az: SEAV + 14, el: 42 } ];
+    { t: 0.0, tg: at(16, 5, 8), z: 64, az: HOOKV, el: 38 },
+    { t: 3.6, tg: at(10, 4, 4), z: 56, az: HOOKV + 6, el: 42 },
+    { t: 8.0, tg: at(8, 3, 2), z: 52, az: HOOKV + 10, el: 46 },
+    { t: 9.6, tg: at(26, 0, 22), z: 82, az: PLANV, el: 89.4 },
+    { t: 13.6, tg: at(28, 0, 20), z: 78, az: PLANV, el: 89.4 },
+    { t: 15.0, tg: at(80, 7, 0), z: 30, az: SECF, el: 4 },
+    { t: 21.6, tg: at(-6, 5, 0), z: 30, az: SECF, el: 4 },
+    { t: 23.0, tg: atB(CD.uN - 10, CD.tIn + 1.6, 7.6), z: 17, az: CORRV, el: 40 },
+    { t: 25.2, tg: atB(CD.uN - 20, CD.tIn + 1.0, 7.0), z: 18, az: CORRV + 10, el: 34 },
+    { t: 27.6, tg: at(-6, 2, 2), z: 46, az: REVV, el: 24 },
+    { t: 28.8, tg: at(4, 3, 0), z: 52, az: HOOKV + 22, el: 46 },
+    { t: 33.8, tg: at(6, 3, 2), z: 48, az: HOOKV + 28, el: 44 },
+    { t: 35.4, tg: at(30, 6, 0), z: 46, az: LANDV, el: 28 },
+    { t: 39.8, tg: at(24, 6, 6), z: 50, az: LANDV + 8, el: 30 },
+    { t: 46.5, tg: at(260, 0, 0), z: 560, az: HOOKV + 10, el: 40 },
+    { t: 50.0, tg: at(300, 0, 0), z: 620, az: HOOKV + 14, el: 42 } ];
   for (let i = 1; i < K.length; i++) { while (K[i].az - K[i - 1].az > 180) K[i].az -= 360; while (K[i].az - K[i - 1].az < -180) K[i].az += 360; }
-  const words = [[0.25, 3.4, '¿Una piscina que se llena con el mar?'], [3.8, 8.4, '1961: se la encargan a un arquitecto de 26 años.'], [8.8, 13.6, 'Solo añade muros.'],
-    [14.4, 17.4, 'Del mar a la avenida.'], [17.6, 20.8, 'Y desde la calle, el mar sigue a la vista.'], [21.4, 26.8, 'Dos piscinas de agua de mar.'],
-    [27.4, 33.0, '835 dibujos para casi no tocar nada.'], [33.6, 39.8, '1966: abre. 2011: Monumento Nacional.'], [40.4, 47.0, '¿Arquitectura o paisaje?']];
-  const kick = (t) => t < 3.6 ? '013 · PISCINA DAS MARÉS · LEÇA DA PALMEIRA' : t < 8.6 ? '013 · LEÇA DA PALMEIRA · 1961' : t < 14.0 ? '013 · ÁLVARO SIZA · 1961 – 1966' : t < 21.2 ? '013 · SECCIÓN' :
-    t < 27.2 ? '013 · PLANTA' : t < 33.4 ? '013 · ARCHIVO SIZA · CCA, MONTREAL' : t < 40.2 ? '013 · MATOSINHOS, PORTUGAL' : '013 · RESTAURADA ENTRE 2019 Y 2021';
+  const words = [[0.25, 3.4, '¿Una piscina que se llena con el mar?'], [3.8, 8.0, '1961: un arquitecto de 26 años solo añade muros.'], [8.4, 13.8, 'De la avenida al mar, bajando.'],
+    [14.2, 17.8, 'Los vestuarios, 2 m por debajo de la calle.'], [18.0, 21.8, 'Y el mar, siempre a la vista.'], [22.4, 25.4, 'Entras entre muros…'], [25.6, 27.9, '…y aparece el mar.'],
+    [28.4, 33.8, '¿La llena la marea? No: el agua se bombea y se trata.'], [34.4, 39.8, '1966: abre. 2011: Monumento Nacional.'], [40.4, 47.0, '¿Arquitectura o paisaje?']];
+  const kick = (t) => t < 3.6 ? '013 · PISCINA DAS MARÉS · LEÇA DA PALMEIRA' : t < 8.2 ? '013 · ÁLVARO SIZA · 1961 – 1966' : t < 14.0 ? '013 · PLANTA' : t < 22.2 ? '013 · SECCIÓN' :
+    t < 28.2 ? '013 · LA ENTRADA' : t < 34.2 ? '013 · AGUA DE MAR TRATADA' : t < 40.2 ? '013 · MATOSINHOS, PORTUGAL' : '013 · RESTAURADA ENTRE 2019 Y 2021';
   window.renderAt = (tt) => {
     let i = 1; while (i < K.length - 1 && K[i].t < tt) i++; const a = K[i - 1], b = K[i]; const u = smr(seg(tt, a.t, b.t));
     let tw = '', to = 0; for (const [a0, b0, tx] of words) { const f = fw(tt, a0, b0, 0.22); if (f > 0) { tw = tx; to = f; } }
-    const ph = { site: tt < 3.7 ? 1 : tt < 8.8 ? 0 : 1, walls: tt < 3.7 ? 1 : tt < 8.8 ? 1 - smr(seg(tt, 3.7, 4.3)) : smr(seg(tt, 8.9, 11.4)), red: tt > 8.8 && tt < 14.2 ? 1 : 0,
-      water: tt < 3.7 ? 1 : tt < 8.8 ? 1 - smr(seg(tt, 3.7, 4.3)) : smr(seg(tt, 11.4, 13.6)), ghost: tt < 3.7 ? 0 : tt < 11.4 ? smr(seg(tt, 3.9, 4.6)) * (1 - smr(seg(tt, 10.6, 11.4))) : 0,
-      people: tt < 3.7 ? 1 : tt < 13.0 ? (tt < 4.4 ? 1 - smr(seg(tt, 3.7, 4.2)) : 0) : smr(seg(tt, 13.0, 16.0)), sec: tt > 14.9 && tt < 21.6 ? 1 : 0 };
+    const ph = { site: 1, walls: tt < 3.7 ? 1 : tt < 8.6 ? 0.25 + 0.75 * smr(seg(tt, 3.9, 6.6)) : 1, red: tt > 3.7 && tt < 14.0 ? 1 : 0, water: 1, ghost: 0, people: 1,
+      sec: tt > 14.6 && tt < 22.2 ? 1 : 0, pipe: fw(tt, 28.6, 34.0, 0.5) };
     const labels = [], dims = [];
-    const fl = fw(tt, 15.6, 21.2, 0.3); if (fl > 0) { const L5 = [['MAR', -22, 2.2, 15.6], ['PISCINA', 1, 3.8, 16.0], ['ROCAS', 31, 6.0, 16.4], ['VESTUARIOS', 55, 9.6, 16.8], ['AVENIDA', 91, 12.8, 17.2]];
-      for (const [tx, t0, y, s0] of L5) { const f = fl * smr(seg(tt, s0, s0 + 0.4)); if (f > 0) labels.push([tx, at(t0, y, -0.1), f]); } }
-    const fp = fw(tt, 22.4, 26.8, 0.3); if (fp > 0) labels.push(['ADULTOS', [C[0], 2, C[1]], fp], ['NIÑOS', D.pools[1] ? [D.pools[1].r.reduce((m, p) => m + p[0], 0) / D.pools[1].r.length, 2, D.pools[1].r.reduce((m, p) => m + p[1], 0) / D.pools[1].r.length] : [0, 0, 0], fp]);
+    const fl = fw(tt, 15.0, 22.0, 0.3); if (fl > 0) { const L5 = [['AVENIDA', 91, 11.6], ['VESTUARIOS', 54, 11.2], ['PLATAFORMA', 43, 8.6], ['ROCAS', 24, 5.4], ['PISCINA', 2, 4.0], ['MAR', -24, 3.0]];
+      for (const [tx, t0, y] of L5) labels.push([tx, at(t0, y, -0.1), fl]); }
+    const fp = fw(tt, 9.8, 13.8, 0.3); if (fp > 0) labels.push(['AVENIDA', at(92, 9, 40), fp], ['VESTUARIOS', at(60, 10, 30), fp], ['BAR', at(44, 8, 60), fp], ['ROCAS', at(22, 4, -14), fp], ['PISCINA', at(1, 3, 0), fp], ['NIÑOS', at(30, 3, -30), fp]);
     const fs = fw(tt, 41.0, 50.0, 0.4); if (fs > 0) labels.push(['OCÉANO ATLÁNTICO', at(-170, 0, -40), fs], ['LEÇA DA PALMEIRA', at(380, 20, 60), fs]);
     return window.shot({ t: tt, tg: a.tg.map((v, j) => lerp(v, b.tg[j], u)), z: Math.exp(lerp(Math.log(a.z), Math.log(b.z), u)), az: lerp(a.az, b.az, u), el: lerp(a.el, b.el, u),
       ph, labels, dims, title: tw, titleOp: to, kick: kick(tt) });
   };
   window.renderCover = () => { document.body.classList.add('cover');
     return window.shot({ t: 20, tg: at(4, 30, 0), z: 54, az: SEAV + 4, el: 34, ph: {}, kick: '', title: '' }); };
+  window.B13 = { at, azOf, A, N, C, S };
   window.READY = true;
 }
+
