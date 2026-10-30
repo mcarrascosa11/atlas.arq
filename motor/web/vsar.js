@@ -28,17 +28,19 @@ export async function init() {
   const GR = G3.grid; const hAt = (x, z) => { const fx = (x - GR.x0) / GR.d, fz = (z - GR.z0) / GR.d; const i = Math.max(0, Math.min(GR.nx - 2, Math.floor(fx))), j = Math.max(0, Math.min(GR.nz - 2, Math.floor(fz)));
     const u = clamp(fx - i), v = clamp(fz - j), h = (a, b) => GR.h[b * GR.nx + a]; return (1 - v) * ((1 - u) * h(i, j) + u * h(i + 1, j)) + v * ((1 - u) * h(i, j + 1) + u * h(i + 1, j + 1)); };
   const groundM = fillMat('#F4F3EE', { hatch: 0, side: 1, shade: 0.9, double: true }), paperM = fillMat('#F7F6F2', { hatch: 0, side: 0.9, shade: 0.76 }), redM = fillMat(RED, { hatch: 0, side: 0.9, shade: 0.78 });
+  groundM.polygonOffset = true; groundM.polygonOffsetFactor = 2; groundM.polygonOffsetUnits = 2;
+  const ok = (x, z) => { const i = Math.round((x - GR.x0) / GR.d), j = Math.round((z - GR.z0) / GR.d); return i >= 0 && j >= 0 && i < GR.nx && j < GR.nz && GR.v[j * GR.nx + i] === 1; };
   const barnM = fillMat('#EEEAE0', { hatch: 0, side: 0.9, shade: 0.78 }), pubM = fillMat('#E4E1D8', { hatch: 0, side: 0.9, shade: 0.76 }), treeM = flatM('#E3E6D9');
   // ---------- relieve: malla del terreno y curvas cada metro ----------
   { const P = G3.ter, A = mk(); for (let k = 0; k < P.length; k += 9) push3(A.P, A.B, A.T, 0, 60, ...upTri([P[k], P[k + 1] - 0.04, P[k + 2]], [P[k + 3], P[k + 4] - 0.04, P[k + 5]], [P[k + 6], P[k + 7] - 0.04, P[k + 8]])); scene.add(mesh(A, groundM));
     const E = []; for (const c of G3.cont) for (let i = 0; i < c.l.length - 1; i++) E.push(c.l[i][0], c.h + 0.05, c.l[i][1], c.l[i + 1][0], c.h + 0.05, c.l[i + 1][1]); scene.add(segs(E, lineMat('#D3CCBF', 0.5))); }
   // ---------- caminos, lindes y árboles de cada época, sobre el relieve ----------
   const Y55 = new THREE.Group(), Y19 = new THREE.Group(); scene.add(Y55, Y19);
-  const drape = (L, dy, E) => { for (let i = 0; i < L.length - 1; i++) E.push(L[i][0], hAt(L[i][0], L[i][1]) + dy, L[i][1], L[i + 1][0], hAt(L[i + 1][0], L[i + 1][1]) + dy, L[i + 1][1]); };
+  const drape = (L, dy, E) => { for (let i = 0; i < L.length - 1; i++) if (ok(L[i][0], L[i][1]) && ok(L[i + 1][0], L[i + 1][1])) E.push(L[i][0], hAt(L[i][0], L[i][1]) + dy, L[i][1], L[i + 1][0], hAt(L[i + 1][0], L[i + 1][1]) + dy, L[i + 1][1]); };
   for (const [k, G] of [['1955', Y55], ['2019', Y19]]) {
-    const E = []; for (const L of D.caminos[k]) drape(L, 0.1, E); G.add(segs(E, lineMat('#A9A49A', 0.8)));
-    const F = []; for (const L of D.tierras[k]) drape(L, 0.08, F); G.add(segs(F, lineMat('#CFC9BC', 0.5)));
-    const T = mk(), Et = []; for (const [x, z, r] of D.arboles[k]) { const y = hAt(x, z) + 0.15, n = 10; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, b = (i + 1) / n * Math.PI * 2; const p0 = [x, y, z], p1 = [x + Math.cos(a) * r, y, z + Math.sin(a) * r], p2 = [x + Math.cos(b) * r, y, z + Math.sin(b) * r];
+    const E = []; for (const L of D.caminos[k]) drape(L, 0.3, E); G.add(segs(E, lineMat('#A9A49A', 0.8)));
+    const F = []; for (const L of D.tierras[k]) drape(L, 0.25, F); G.add(segs(F, lineMat('#CFC9BC', 0.5)));
+    const T = mk(), Et = []; for (const [x, z, r] of D.arboles[k]) { if (!ok(x, z)) continue; const y = hAt(x, z) + 0.35, n = 10; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, b = (i + 1) / n * Math.PI * 2; const p0 = [x, y, z], p1 = [x + Math.cos(a) * r, y, z + Math.sin(a) * r], p2 = [x + Math.cos(b) * r, y, z + Math.sin(b) * r];
       push3(T.P, T.B, T.T, 0, 60, ...upTri(p0, p1, p2)); Et.push(...p1, ...p2); } }
     G.add(mesh(T, treeM), segs(Et, lineMat('#B9BFAE', 0.5))); }
   // ---------- edificios de la maqueta de 1960 (cubiertas con su pendiente real), cada pieza con su edificio del plano ----------
@@ -47,8 +49,9 @@ export async function init() {
   const PCS = G3.pieces.map((pc, i) => { const P = pc.tri, A = mk(); let sx = 0, sz = 0; for (let k = 0; k < P.length; k += 9) { push3(A.P, A.B, A.T, pc.y0, pc.y0 + 9, [P[k], P[k + 1], P[k + 2]], [P[k + 3], P[k + 4], P[k + 5]], [P[k + 6], P[k + 7], P[k + 8]]); sx += P[k]; sz += P[k + 2]; }
     const n = P.length / 9, cx = sx / n, cz = sz / n; let b = pc.b; if (b < 0) { let bd = 9; cen.forEach((c, j) => { const d = Math.hypot(c[0] - cx, c[1] - cz); if (d < bd) { bd = d; b = j; } }); }
     const bl = b >= 0 ? D.blds[b] : null, u = bl ? bl.u55 : 'otro', base = u === 'publico' ? pubM : (u === 'viv' || u === 'vivdes') ? paperM : barnM;
-    const m = mesh(A, base), e = segs(pc.e, lineMat(INK, 0.8)), g = new THREE.Group(); g.add(m, e); scene.add(g);
-    return { g, m, base, b, bl, lit55: bl ? (famIn(bl.r) || u === 'viv') : false, s19: bl ? bl.s19 : 'desaparece', ord: frac(Math.sin(i * 12.9898) * 43758.5453), cx, cz }; });
+    const m = mesh(A, base), e = segs(pc.e, lineMat(INK, 0.8)), g = new THREE.Group(); g.add(m, e); scene.add(g); let m2 = null;
+    if (pc.f && pc.f.length >= 3) { const tmin = Math.min(...pc.f.map(p => hAt(p[0], p[1])), hAt(cx, cz)); if (tmin < pc.y0 - 0.05) { const Ab = mk(), Eb = []; band([pc.f], tmin - 0.5, pc.y0 + 0.02, Ab, Eb); m2 = mesh(Ab, base); g.add(m2); } }
+    return { g, m, m2, base, b, bl, lit55: bl ? (famIn(bl.r) || u === 'viv') : false, s19: bl ? bl.s19 : 'desaparece', ord: frac(Math.sin(i * 12.9898) * 43758.5453), cx, cz }; });
   // ruinas de 2019: muros bajos sobre la huella; edificios nuevos de 2019 con la pendiente media de las cubiertas de la maqueta
   const RUINS = new THREE.Group(); scene.add(RUINS); const stoneM = fillMat('#E9E3D6', { hatch: 0, side: 0.88, shade: 0.74, double: true });
   D.blds.forEach((b) => { if (b.s19 !== 'ruina') return; const y0 = Math.min(...b.r.map(p => hAt(p[0], p[1]))) - 0.3; const inner = inset(b.r, 0.55); if (!inner) return; const A = mk(), E = []; band([b.r, inner], y0, y0 + 1.9, A, E); RUINS.add(mesh(A, stoneM), segs(E, lineMat(INK, 0.7))); });
@@ -57,16 +60,16 @@ export async function init() {
     prism(r, y0, y0 + 5.2, Math.min(3, s / 2 * tanR), A.P, A.B, A.T, E, { hip: s / 2 - 0.05 }); NEW.add(mesh(A, paperM), segs(E, lineMat(INK, 0.8))); }
   // ---------- familias de 1955 ----------
   const manG = (() => { const c = new THREE.CylinderGeometry(0.42, 0.42, 1.9, 8); c.translate(0, 0.95, 0); const h = new THREE.SphereGeometry(0.42, 8, 6); h.translate(0, 2.25, 0); return merge([c.toNonIndexed(), h.toNonIndexed()]); })();
-  const pplM = flatM(RED); const PPL = D.per.map(([x, z], i) => { const m = new THREE.Mesh(manG, pplM); m.scale.setScalar(2.2); scene.add(m); return { m, x, z, d: frac(Math.sin(i * 7.31) * 1e4) }; });
+  const PPL = [];
   const famL = lineMat(RED, 2.0), FAM = new THREE.Group(); scene.add(FAM);
-  { const E = []; for (const [x, z, r] of D.fam) { const y = hAt(x, z) + 0.4, n = 28; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, b = (i + 1) / n * Math.PI * 2; E.push(x + Math.cos(a) * r, y, z + Math.sin(a) * r, x + Math.cos(b) * r, y, z + Math.sin(b) * r); } } FAM.add(segs(E, famL)); }
+  if (false) { const E = []; for (const [x, z, r] of D.fam) { const y = hAt(x, z) + 0.4, n = 28; for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2, b = (i + 1) / n * Math.PI * 2; E.push(x + Math.cos(a) * r, y, z + Math.sin(a) * r, x + Math.cos(b) * r, y, z + Math.sin(b) * r); } } FAM.add(segs(E, famL)); }
   const lazL = lineMat(RED, 2.2), LAZ = new THREE.Group(); scene.add(LAZ);
   { const E = []; for (const L of [...D.lazos.hijos, ...D.lazos.hermanos]) { const n = L.length, len = Math.hypot(L[n - 1][0] - L[0][0], L[n - 1][1] - L[0][1]), hh = 4 + Math.min(14, len * 0.12), yb = Math.max(hAt(...L[0]), hAt(...L[n - 1])) + 7.5;
       for (let i = 0; i < n - 1; i++) E.push(L[i][0], yb + Math.sin(Math.PI * i / (n - 1)) * hh, L[i][1], L[i + 1][0], yb + Math.sin(Math.PI * (i + 1) / (n - 1)) * hh, L[i + 1][1]); } LAZ.add(segs(E, lazL)); }
   // ---------- 2019: la asociación que vuelve y las casas ocupadas ----------
   const occL = lineMat(RED, 2.4), OCC = new THREE.Group(); scene.add(OCC);
   const RINGS = D.occ19.map(([x, z, r], i) => { const E = [], n = 32; for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, b = (k + 1) / n * Math.PI * 2; E.push(Math.cos(a) * r, 0, Math.sin(a) * r, Math.cos(b) * r, 0, Math.sin(b) * r); }
-    const s = segs(E, occL); OCC.add(s); const ang = i * 2.399; return { s, x, z, y: hAt(x, z) + 0.6, fx: x + Math.cos(ang) * 380, fz: z + Math.sin(ang) * 380 }; });
+    const s = segs(E, occL); const ang = i * 2.399; return { s, x, z, y: hAt(x, z) + 0.6, fx: x + Math.cos(ang) * 380, fz: z + Math.sin(ang) * 380 }; });
   const occIn = (q) => D.occ19.some(([x, z, r]) => Math.hypot(q.cx - x, q.cz - z) < r + 2) || q.s19 === 'viv';
   // el camino (el trazado más largo que sale del pueblo)
   const ROAD = new THREE.Group(); scene.add(ROAD); const roadL = lineMat(RED, 4.0);
@@ -119,7 +122,7 @@ export async function init() {
       if (q.lit55 && lit > q.ord) mat = redM;
       if (y19 >= 0.5 || gone > 0.5) { if (q.s19 === 'desaparece' || q.s19 === 'ruina') vis = false; if (y19 >= 0.5) mat = (ph.occ ?? 0) > q.ord * 0.8 && occIn(q) ? redM : q.base; }
       if (q.b === 30 && (ph.ref ?? -1) >= 0) vis = false;
-      q.g.visible = vis; q.m.material = mat; }
+      q.g.visible = vis; q.m.material = mat; if (q.m2) q.m2.material = mat; }
     const pe = ph.people ?? 0, leave = ph.leave ?? 0;
     for (const p of PPL) { const on = pe > p.d * 0.98 && leave < 0.15 + p.d * 0.85; p.m.visible = on; if (!on) continue; const k = clamp((leave - p.d * 0.6) / 0.4); const x = p.x + k * 240, z = p.z - k * 40; p.m.position.set(x, hAt(x, z), z); }
     FAM.visible = (ph.fam ?? 0) > 0.02; setLineOpacity(famL, ph.fam ?? 0); LAZ.visible = (ph.laz ?? 0) > 0.02; setLineOpacity(lazL, ph.laz ?? 0);
@@ -145,42 +148,41 @@ export async function init() {
       svg.insertAdjacentHTML('beforeend', s + '</g>'); }
     return true;
   };
-  // ================= línea de tiempo (80 s) =================
+  // ================= línea de tiempo (60 s) =================
   const azOf = (dx, dz) => Math.atan2(dx, dz) * 180 / Math.PI;
   const OUTV = (() => { const nrm = [abU[1], -abU[0]], c = F.reduce((s, p) => [s[0] + p[0] / F.length, s[1] + p[1] / F.length], [0, 0]), m = [(RF.A1[0] + RF.B[0]) / 2 - c[0], (RF.A1[1] + RF.B[1]) / 2 - c[1]]; return (m[0] * nrm[0] + m[1] * nrm[1]) > 0 ? nrm : [-nrm[0], -nrm[1]]; })();
   const RAZ = azOf(OUTV[0] * 0.8 + 0.6 * OUTV[1], OUTV[1] * 0.8 - 0.6 * OUTV[0]), hV = hAt(-10, 0), RC = [-60.5, Fy + 3, -8];
   const V = (z, az, el, dx = 0, dz = 0, dy = 0) => ({ tg: [-10 + dx, hV + dy, 0 + dz], z, az, el });
   const K = [
-    { t: 0.0, ...V(118, 188, 40) }, { t: 4.0, ...V(112, 196, 42) }, { t: 10.5, ...V(96, 204, 44, -6, -4, 4) }, { t: 17.5, ...V(116, 210, 42) },
-    { t: 25.5, ...V(122, 214, 44) }, { t: 30.5, ...V(124, 218, 46) }, { t: 35.0, ...V(160, 222, 46) }, { t: 41.5, ...V(150, 214, 44) },
-    { t: 47.0, ...V(114, 206, 42) }, { t: 52.5, ...V(114, 204, 42) }, { t: 58.8, ...V(114, 204, 42) },
-    { t: 61.0, tg: RC, z: 30, az: RAZ, el: 30 }, { t: 67.0, tg: RC, z: 26, az: RAZ + 12, el: 28 }, { t: 68.2, tg: [RC[0], RC[1] - 1, RC[2]], z: 22, az: RAZ + 32, el: 38 },
-    { t: 72.4, tg: [RC[0], RC[1] - 1, RC[2]], z: 22, az: RAZ + 38, el: 38 }, { t: 74.0, tg: RC, z: 26, az: RAZ, el: 26 }, { t: 80.0, ...V(150, 200, 40) } ];
+    { t: 0.0, ...V(92, 186, 38) }, { t: 3.5, ...V(84, 198, 42, -4, -2) }, { t: 8.5, ...V(78, 212, 46, -8, -4, 4) }, { t: 12.5, ...V(88, 222, 42, 6, 2) },
+    { t: 19.0, ...V(86, 236, 44, 4, 0) }, { t: 23.0, ...V(92, 220, 46) }, { t: 28.0, ...V(86, 206, 42, -6, 0) }, { t: 32.5, ...V(80, 196, 40, -10, -2) },
+    { t: 36.0, ...V(80, 196, 40, -10, -2) }, { t: 41.0, ...V(80, 196, 40, -30, -4) },
+    { t: 42.6, tg: RC, z: 28, az: RAZ, el: 30 }, { t: 48.6, tg: RC, z: 25, az: RAZ + 14, el: 28 }, { t: 49.6, tg: [RC[0], RC[1] - 1, RC[2]], z: 21, az: RAZ + 32, el: 38 },
+    { t: 53.4, tg: [RC[0], RC[1] - 1, RC[2]], z: 21, az: RAZ + 40, el: 38 }, { t: 55.0, tg: RC, z: 25, az: RAZ, el: 26 }, { t: 60.0, tg: [RC[0] + 20, RC[1] - 2, RC[2] + 6], z: 60, az: RAZ - 18, el: 36 } ];
   for (let i = 1; i < K.length; i++) { while (K[i].az - K[i - 1].az > 180) K[i].az -= 360; while (K[i].az - K[i - 1].az < -180) K[i].az += 360; }
-  const words = [[0.3, 3.8, 'En 1979 murió su último vecino.'], [4.4, 10.2, '1955: 228 vecinos y 53 casas con luz.'], [10.8, 17.2, 'Cada arco une padres, hijos y hermanos que vivían en casas distintas.'],
-    [17.8, 21.4, '1957, la pedregada. 1965, los pinos.'], [21.6, 25.3, 'Las familias se van: Logroño, Tudela, Zaragoza.'], [25.8, 30.3, '23 de abril de 1979: muere el último vecino.'],
-    [30.8, 34.8, '1988: se hunde el tejado de la iglesia.'], [35.3, 41.2, '1980: los que se fueron fundan una asociación.'], [41.8, 44.4, 'En hacenderas arreglan calles, agua y luz.'],
-    [44.6, 46.8, '2018: el camino asfaltado, tras 87 años de lucha.'], [47.4, 52.3, '2019: 26 casas arregladas.'], [52.8, 58.6, '640 personas siguen ligadas al pueblo.'],
-    [59.4, 62.8, 'Ahora levantan El Refugio, un centro social.'], [63.0, 67.2, 'Piedra del lugar y madera de pino de Soria.'], [67.6, 72.2, 'Y lo abrigan con lana de oveja.'],
-    [72.6, 76.2, 'Abriguemos el Refugio: la campaña sigue abierta.'], [76.4, 79.6, 'Tierra de nadie, tierra de todos.']];
-  const kick = (t) => t < 4.2 ? '015 · SARNAGO · TIERRAS ALTAS, SORIA' : t < 10.6 ? '015 · 1955' : t < 17.6 ? '015 · 1955 · FAMILIAS' : t < 25.6 ? '015 · 1957 – 1979' : t < 30.6 ? '015 · 1979' : t < 35.1 ? '015 · 1988' :
-    t < 41.6 ? '015 · 1980' : t < 47.2 ? '015 · HACENDERAS' : t < 52.6 ? '015 · 2019' : t < 59.0 ? '015 · DÓNDE VIVEN' : t < 67.4 ? '015 · EL REFUGIO' : t < 72.4 ? '015 · ABRIGUEMOS EL REFUGIO' : '015 · GOTEO.CC/JC · @AASARNAGO';
+  const words = [[0.25, 3.3, 'En 1979 murió su último vecino.'], [3.6, 8.3, '1955: 228 vecinos y 53 casas habitadas.'], [8.6, 12.3, 'Cada arco une padres, hijos y hermanos.'],
+    [12.6, 15.7, '1957, la pedregada. 1965, los pinos.'], [15.9, 18.8, 'Las familias se van.'], [19.1, 22.8, '23 de abril de 1979: muere el último vecino.'],
+    [23.1, 27.8, '1980: los que se fueron fundan una asociación.'], [28.1, 30.3, 'En hacenderas arreglan calles, agua y luz.'], [30.4, 32.4, '2018: el camino asfaltado, tras 87 años.'],
+    [32.6, 35.8, '2019: 26 casas arregladas.'], [36.1, 40.8, '640 personas siguen ligadas al pueblo.'], [41.1, 44.6, 'Ahora levantan El Refugio, un centro social.'],
+    [44.8, 48.4, 'Piedra del lugar y madera de pino de Soria.'], [48.7, 53.2, 'Y lo abrigan con lana de oveja.'], [53.5, 56.6, 'Y ahora buscan financiación para seguir adelante.'], [56.8, 59.8, 'Ayúdalos: goteo.cc/jc']];
+  const kick = (t) => t < 3.5 ? '015 · SARNAGO · TIERRAS ALTAS, SORIA' : t < 8.5 ? '015 · 1955' : t < 12.5 ? '015 · 1955 · FAMILIAS' : t < 19.0 ? '015 · 1957 – 1979' : t < 23.0 ? '015 · 1979' :
+    t < 28.0 ? '015 · 1980' : t < 32.5 ? '015 · HACENDERAS' : t < 36.0 ? '015 · 2019' : t < 41.0 ? '015 · DÓNDE VIVEN' : t < 48.6 ? '015 · EL REFUGIO' : t < 53.4 ? '015 · ABRIGUEMOS EL REFUGIO' : '015 · GOTEO.CC/JC · @AASARNAGO';
   const Fc0 = F.reduce((s, p) => [s[0] + p[0] / F.length, s[1] + p[1] / F.length], [0, 0]);
-  const LBL = (() => { const mid = (p, q, d) => [(p[0] + q[0]) / 2 + OUTV[0] * d, Fy + 2.2, (p[1] + q[1]) / 2 + OUTV[1] * d]; const sm2 = (p, q, d, y) => [(p[0] + q[0]) / 2 + (((p[0] + q[0]) / 2) - Fc0[0]) * d, y, (p[1] + q[1]) / 2 + (((p[1] + q[1]) / 2) - Fc0[1]) * d];
+  const LBL = (() => { const sm2 = (p, q, d, y) => [(p[0] + q[0]) / 2 + (((p[0] + q[0]) / 2) - Fc0[0]) * d, y, (p[1] + q[1]) / 2 + (((p[1] + q[1]) / 2) - Fc0[1]) * d];
     return [['PIEDRA DEL LUGAR', sm2(RF.B, RF.C, 0.55, Fy + 0.6)], ['LANA DE OVEJA', [RF.A1[0] + OUTV[0] * 1.5, Fy + 6.4, RF.A1[1] + OUTV[1] * 1.5]], ['MADERA', [Fc0[0], Fy + 6.0, Fc0[1]]]]; })();
   window.renderAt = (tt) => {
     let i = 1; while (i < K.length - 1 && K[i].t < tt) i++; const a = K[i - 1], b = K[i]; const u = smr(seg(tt, a.t, b.t));
-    let tw = '', to = 0; for (const [a0, b0, tx] of words) { const f = fw(tt, a0, b0, 0.25); if (f > 0) { tw = tx; to = f; } }
-    const y19 = tt >= 35.0 ? 1 : 0;
-    const ph = { y19, lit: tt < 17.8 ? smr(seg(tt, 4.2, 6.2)) : 1 - smr(seg(tt, 18.0, 25.0)), people: tt < 18 ? smr(seg(tt, 4.4, 6.0)) : 1, leave: smr(seg(tt, 18.2, 24.5)),
-      fam: fw(tt, 10.8, 17.4, 0.6), laz: fw(tt, 11.4, 17.4, 0.6), gone: tt < 35 ? smr(seg(tt, 31.0, 34.0)) : 1, arrive: tt >= 35 ? smr(seg(tt, 35.4, 40.2)) : 0,
-      road: 0, occ: tt < 59 ? smr(seg(tt, 47.4, 49.6)) : tt < 76.2 ? 1 - smr(seg(tt, 59.0, 60.6)) : smr(seg(tt, 76.2, 77.8)), map: fw(tt, 52.6, 59.0, 0.7), mapLines: smr(seg(tt, 53.4, 57.2)),
-      ref: tt >= 59.2 ? 0.0 + smr(seg(tt, 60.0, 66.6)) : -1, wool: smr(seg(tt, 68.0, 70.8)), cut: tt > 67.5 && tt < 72.6 ? 1 : 0 };
-    if (tt >= 72.6) { ph.ref = 1; ph.wool = 1; ph.cut = 0; }
-    const labels = []; const fl = fw(tt, 68.4, 72.4, 0.4); if (fl > 0) for (const [txt, p] of LBL) labels.push([txt, p, fl]);
+    let tw = '', to = 0; for (const [a0, b0, tx] of words) { const f = fw(tt, a0, b0, 0.22); if (f > 0) { tw = tx; to = f; } }
+    const y19 = tt >= 23.0 ? 1 : 0;
+    const ph = { y19, lit: tt < 12.6 ? smr(seg(tt, 3.5, 4.8)) : 1 - smr(seg(tt, 12.8, 18.6)), laz: fw(tt, 8.6, 13.4, 0.5),
+      gone: tt < 23 ? smr(seg(tt, 20.6, 22.8)) : 1, occ: tt < 41 ? smr(seg(tt, 23.4, 35.0)) : tt < 57.4 ? 1 - smr(seg(tt, 41.0, 42.4)) : smr(seg(tt, 57.4, 59.0)),
+      map: fw(tt, 36.0, 41.0, 0.6), mapLines: smr(seg(tt, 36.6, 39.6)), road: 0,
+      ref: tt >= 41.4 ? smr(seg(tt, 42.0, 47.6)) : -1, wool: smr(seg(tt, 49.0, 51.6)), cut: tt > 48.6 && tt < 53.5 ? 1 : 0 };
+    if (tt >= 53.5) { ph.ref = 1; ph.wool = 1; ph.cut = 0; }
+    const labels = []; const fl = fw(tt, 49.4, 53.2, 0.35); if (fl > 0) for (const [txt, p] of LBL) labels.push([txt, p, fl]);
     return window.shot({ t: tt, tg: a.tg.map((v, j) => lerp(v, b.tg[j], u)), z: Math.exp(lerp(Math.log(a.z), Math.log(b.z), u)), az: lerp(a.az, b.az, u), el: lerp(a.el, b.el, u), ph, labels, title: tw, titleOp: to, kick: kick(tt) });
   };
-  window.renderCover = () => { document.body.classList.add('cover'); return window.shot({ t: 0, tg: [-30, hV + 20, -2], z: 92, az: 200, el: 40, ph: { y19: 1, occ: 1, arrive: 1, ref: 1, wool: 1 }, kick: '', title: '' }); };
+  window.renderCover = () => { document.body.classList.add('cover'); return window.shot({ t: 0, tg: [-30, hV + 20, -2], z: 80, az: 200, el: 40, ph: { y19: 1, occ: 1, ref: 1, wool: 1 }, kick: '', title: '' }); };
   window.SAR = { hAt, RF, F, Fy, cen, OUT: (() => { const nrm = [abU[1], -abU[0]], c = F.reduce((s, p) => [s[0] + p[0] / F.length, s[1] + p[1] / F.length], [0, 0]), m = [(RF.A1[0] + RF.B[0]) / 2 - c[0], (RF.A1[1] + RF.B[1]) / 2 - c[1]]; return (m[0] * nrm[0] + m[1] * nrm[1]) > 0 ? nrm : [-nrm[0], -nrm[1]]; })() };
   window.READY = true;
 }
