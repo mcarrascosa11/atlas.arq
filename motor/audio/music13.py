@@ -1,6 +1,6 @@
 # Original cue for 013 (Piscina das Marés, Leça da Palmeira). Calm Atlantic mood: soft marimba-like arpeggio in D major, warm pad and quiet
 # filtered-noise waves. 3.6 s: the walls (wooden knocks); 8 s: plan; 14 s: section (low drone); 22 s: between walls, closed; 25.6 s: the sea appears
-# (open chord); 28 s: pumped seawater (low pulses); 34 s: warm chords; 40 s: resolve.
+# (open chord); 28 s: pumped seawater (low pulses); 34 s: warm chords; 40 s: resolve. Scenes are joined with long overlapping crossfades.
 import numpy as np, scipy.signal as ss, wave, sys
 SR = 44100; DUR = 50.0; N = int(SR * DUR); rng = np.random.default_rng(13)
 BUS = {k: [np.zeros(N), np.zeros(N)] for k in ('arp', 'pad', 'hit', 'tick', 'sea')}
@@ -38,36 +38,33 @@ def arp(t0, t1, notes, amp=0.15, pan=0.3, dur=0.9):
 x = np.arange(N) / SR; nz = rng.normal(0, 1, N); swell = 0.55 + 0.45 * np.sin(2 * np.pi * x / 7.0 - 1.2) ** 2
 sea = ss.sosfilt(ss.butter(2, [120, 1400], 'band', fs=SR, output='sos'), nz) * swell * 0.18
 BUS['sea'][0] += sea; BUS['sea'][1] += np.roll(sea, int(0.013 * SR))
-# 0–3.6: arpegio escaso en Re mayor
-arp(0.0, 3.8, [62, 69, 74, 78, 74, 69], 0.13)
-add(pad([50, 57, 62, 66], 4.4, 0.05), 0.0, bus='pad')
-# 3.6–8.2: los muros, un golpe de madera grave por tramo
-for i in range(10): add(knock(mtof(43 + (i % 3) * 2), 0.16), 3.9 + i * 0.27, pan=-0.5 + i * 0.1, bus='hit')
-arp(3.6, 8.4, [62, 66, 69, 74, 76, 74, 69, 66], 0.14)
-add(pad([50, 57, 62, 69], 5.0, 0.06), 3.4, bus='pad')
-# 8.2–14: la planta, el arpegio se aclara
-arp(8.4, 14.2, [62, 66, 69, 74, 78, 81, 78, 74], 0.14)
-add(pad([50, 57, 62, 66, 69], 6.2, 0.06), 8.2, bus='pad')
-# 14–22: la sección, dron grave y el arpegio sostenido
-add(drone(mtof(38), 8.2, 0.07), 14.0, bus='pad')
-arp(14.2, 22.2, [69, 74, 76, 74], 0.11, dur=1.2)
-add(pad([47, 54, 59, 62, 66], 8.4, 0.06), 13.8, bus='pad')
-# 22–25.6: entre muros, todo se cierra; 25.6: aparece el mar, acorde abierto
-add(pad([45, 52, 57], 3.8, 0.05, 900), 22.0, bus='pad')
-for k in range(6): add(mallet(mtof(57 + (k % 2) * 3), 0.6, 0.08), 22.2 + k * 0.55, bus='arp')
-add(pad([50, 57, 62, 66, 69, 74], 3.0, 0.09, 2400), 25.5, bus='pad'); add(mallet(mtof(81), 2.2, 0.16), 25.6, bus='hit'); add(mallet(mtof(74), 2.2, 0.12), 25.62, bus='hit')
-arp(25.8, 28.4, [74, 78, 81, 86, 81, 78], 0.12)
-# 28–34: el agua, pulsos de bomba graves y arpegio
-for k in range(10): add(knock(mtof(36), 0.10), 28.5 + k * 0.56, bus='hit')
-arp(28.4, 34.2, [62, 66, 69, 74, 69, 66], 0.11)
-add(pad([45, 52, 57, 61, 64], 6.2, 0.05), 28.2, bus='pad')
-# 34–40: acordes cálidos
-arp(34.2, 40.2, [62, 66, 69, 74, 69, 66, 71, 74], 0.13)
-add(pad([43, 50, 55, 59, 62], 6.4, 0.07), 34.0, bus='pad')
-# 40–50: resolución
-arp(40.2, 47.6, [62, 69, 74, 78, 81, 78, 74, 69], 0.12)
-add(pad([50, 57, 62, 66, 69, 74], 10.0, 0.08, 1700), 40.0, bus='pad')
-add(mallet(mtof(74), 3.0, 0.16), 47.6, bus='hit')
+# Transiciones suaves: los colchones se encadenan con fundidos largos que se solapan y el arpegio no se corta entre escenas
+def padX(segs_, amp=0.06, xf=2.6, cut=1500):
+    for k, (t0, t1, ms) in enumerate(segs_):
+        a0 = max(0.0, t0 - xf / 2); a1 = min(DUR, t1 + xf / 2); n = int(SR * (a1 - a0)); x = np.arange(n) / SR; s_ = np.zeros(n)
+        for m in ms:
+            for det in (-0.06, 0.0, 0.05): s_ += np.sin(2 * np.pi * mtof(m + det) * x + rng.random() * 6) * 0.3 + 0.06 * ss.sawtooth(2 * np.pi * mtof(m + det) * x)
+        env = np.ones(n); fi = int(SR * (xf if k > 0 else 1.2)); fo = int(SR * xf)
+        env[:fi] = np.sin(np.linspace(0, np.pi / 2, fi)) ** 2; env[-fo:] = np.cos(np.linspace(0, np.pi / 2, fo)) ** 2
+        add(amp * ss.sosfilt(ss.butter(2, cut, 'low', fs=SR, output='sos'), s_) * env, a0, bus='pad')
+padX([(0.0, 3.8, [50, 57, 62, 66]), (3.8, 8.4, [50, 57, 62, 69]), (8.4, 14.2, [50, 57, 62, 66, 69]), (14.2, 22.2, [47, 54, 59, 62, 66]),
+      (22.2, 28.4, [45, 52, 57, 62]), (28.4, 34.2, [45, 52, 57, 61, 64]), (34.2, 40.2, [43, 50, 55, 59, 62]), (40.2, 50.0, [50, 57, 62, 66, 69, 74])])
+# arpegio continuo: cambia de notas con cada escena pero no de volumen
+SEC_ = [(0.0, [62, 69, 74, 78, 74, 69]), (3.8, [62, 66, 69, 74, 76, 74, 69, 66]), (8.4, [62, 66, 69, 74, 78, 81, 78, 74]), (14.2, [69, 74, 76, 74, 69, 66]),
+        (22.2, [57, 62, 66, 69, 66, 62]), (25.6, [74, 78, 81, 78, 74, 69]), (28.4, [62, 66, 69, 74, 69, 66]), (34.2, [62, 66, 69, 74, 69, 66, 71, 74]), (40.2, [62, 69, 74, 78, 81, 78, 74, 69])]
+t = 0.0; k = 0
+while t < 47.6:
+    notes = [ns for (ts, ns) in SEC_ if ts <= t + 1e-6][-1]; amp = 0.12 * min(1.0, (47.6 - t) / 3.0 + 0.35)
+    add(mallet(mtof(notes[k % len(notes)]), 0.9, amp), t, pan=0.3 if k % 2 else -0.3); t += step; k += 1
+# los muros: golpes de madera suaves que van entrando
+for i in range(10): add(knock(mtof(43 + (i % 3) * 2), 0.05 + 0.006 * i), 3.9 + i * 0.27, pan=-0.5 + i * 0.1, bus='hit')
+# la sección: dron grave con entrada y salida lentas
+add(drone(mtof(38), 8.6, 0.05), 13.9, bus='pad')
+# aparece el mar: un acorde de marimba suave, sin golpe
+for k2, m in enumerate((69, 74, 78)): add(mallet(mtof(m), 2.4, 0.07), 25.6 + 0.04 * k2, pan=-0.2 + 0.2 * k2, bus='hit')
+# el agua bombeada: pulsos graves que crecen y se apagan
+for k3 in range(10): add(knock(mtof(36), 0.025 + 0.025 * np.sin(np.pi * (k3 + 0.5) / 10)), 28.5 + k3 * 0.56, bus='hit')
+add(mallet(mtof(74), 3.0, 0.10), 47.6, bus='hit')
 lp = lambda a, f: ss.sosfilt(ss.butter(2, f, 'low', fs=SR, output='sos'), a); hp = lambda a, f: ss.sosfilt(ss.butter(2, f, 'high', fs=SR, output='sos'), a)
 G = {'arp': 1.0, 'pad': 0.85, 'hit': 0.85, 'tick': 0.7, 'sea': 0.32}
 FX = {'arp': lambda a: lp(hp(a, 120), 8000), 'pad': lambda a: lp(hp(a, 80), 3800), 'hit': lambda a: lp(hp(a, 60), 6000), 'tick': lambda a: hp(a, 1800), 'sea': lambda a: a}
