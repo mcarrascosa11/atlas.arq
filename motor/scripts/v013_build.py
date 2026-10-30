@@ -124,8 +124,17 @@ for j, z in enumerate(ax1):
     for i, x in enumerate(ax1):
         if RH[j, i] > 0 and noRock.contains(Point(x, z)): RH[j, i] = 0
 HH_ = np.maximum(H0, 0) + RH
-corr = Polygon([P_(uS - 2, tIn - 0.2), P_(uN + 2, tIn - 0.2), P_(uN + 2, tIn + 3.2), P_(uS - 2, tIn + 3.2)])
-cut0 = prep(unary_union([casaP.buffer(0.3), corr, tri45.buffer(0.3)])); emb = prep(Polygon([P_(uS - 2, tIn + 3.4), P_(uN + 2, tIn + 3.4), P_(uN + 2, tIn + 14), P_(uS - 2, tIn + 14)]))
+MS = json.load(open(f'{D}/muros_siza.json')); O = np.array(MS['O']); Bv = np.array(MS['B']); Mv = np.array(MS['M'])
+P_ = lambda u, t: tuple(O + Bv * u + Mv * t)
+FOOT = [(47, 9.2), (22, 9.2), (22, 9.6), (-3, 9.6), (-3, 5.6), (-16, 5.6), (-16, 4.6), (-27, 4.6), (-27, 3.1), (-35, 3.1), (-35, 0.1), (-75, 0.1), (-75, -4.6), (21, -4.6), (21, -1.0), (47, -1.0)]
+footP = Polygon([P_(u, t) for u, t in FOOT])
+ROOFS = [((-16, 21), (-4.6, 0.6), 7.9, 8.5), ((-16, 21), (0.6, 5.6), 8.7, 9.3), ((-34.5, -16), (-4.6, -0.2), 7.9, 8.4), ((-34.5, -16), (-0.2, 4.6), 8.6, 9.1),
+         ((-62, -34.5), (-4.6, 0.1), 7.9, 8.4), ((22, 40), (-0.9, 4.1), 8.0, 8.6)]               # cubiertas de cobre de poca pendiente, más altas hacia tierra
+SLABS = [((22, 47), (4.0, 9.2), 8.75), ((-75, -62), (-4.6, 0.1), 8.75)]                               # losas con jardín encima, al norte y al sur
+RAMP = {'u0': 22.0, 'u1': 2.0, 't0': 5.8, 't1': 9.4, 'y0': 8.75}                                        # rampa de entrada desde la acera de la avenida
+inlandEdge = [(u, t) for u, t in FOOT if t > 0.05] 
+corr = Polygon([P_(RAMP['u0'] + 1, RAMP['t0']), P_(RAMP['u1'] - 5, RAMP['t0']), P_(RAMP['u1'] - 5, RAMP['t1']), P_(RAMP['u0'] + 1, RAMP['t1'])])
+cut0 = prep(unary_union([footP.buffer(0.2), corr, tri45.buffer(0.3)])); emb = prep(footP.buffer(14).difference(footP.buffer(0.3)).intersection(unary_union([Polygon([P_(-80, 0.05), P_(50, 0.05), P_(50, 30), P_(-80, 30)])])))
 for j, z in enumerate(ax1):
     for i, x in enumerate(ax1):
         q = Point(x, z)
@@ -133,6 +142,25 @@ for j, z in enumerate(ax1):
         elif emb.contains(q): HH_[j, i] = max(HH_[j, i], 8.7)
 H = np.round(HH_, 2).tolist()
 corrD = {'uS': round(uS, 2), 'uN': round(uN, 2), 'tIn': round(tIn, 2), 'tSea': round(tSea, 2)}
+def roofAt(u, t):
+    for (ua, ub), (ta, tb), lo, hi in ROOFS:
+        if min(ua, ub) <= u <= max(ua, ub) and ta <= t <= tb: return lo + (t - ta) / (tb - ta) * (hi - lo)
+    return None
+WALLS = []
+for r in MS['walls_ut']:
+    g = Polygon(r).buffer(0)
+    if g.is_empty or g.area < 0.05: continue
+    cu, ct = g.centroid.x, g.centroid.y; ry = roofAt(cu, ct)
+    top = (ry - 0.2) if ry else (8.95 if ct > 5.0 else 8.6)
+    for q in getattr(g, 'geoms', [g]):
+        WALLS.append({'r': [[round(v, 2) for v in P_(u, t)] for u, t in list(q.exterior.coords)[:-1]], 'top': round(top, 2)})
+RET = []                                                                                                # muro de contención de la avenida por el borde interior de la huella
+for (ua, ta), (ub, tb) in zip(inlandEdge, inlandEdge[1:]):
+    RET.append([[round(v, 2) for v in P_(ua, ta + 0.2)], [round(v, 2) for v in P_(ub, tb + 0.2)]])
+roofsD = [{'r': [[round(v, 2) for v in P_(u, t)] for u, t in ((ua, ta), (ub, ta), (ub, tb), (ua, tb))], 'lo': lo, 'hi': hi, 't': [ta, tb]} for (ua, ub), (ta, tb), lo, hi in ROOFS]
+slabsD = [{'r': [[round(v, 2) for v in P_(u, t)] for u, t in ((ua, ta), (ub, ta), (ub, tb), (ua, tb))], 'y': y} for (ua, ub), (ta, tb), y in SLABS]
+archD = {'O': [round(float(O[0]), 2), round(float(O[1]), 2)], 'B': [round(float(Bv[0]), 4), round(float(Bv[1]), 4)], 'M': [round(float(Mv[0]), 4), round(float(Mv[1]), 4)],
+         'walls': WALLS, 'roofs': roofsD, 'slabs': slabsD, 'ret': RET, 'ramp': RAMP, 'foot': [[round(v, 2) for v in P_(u, t)] for u, t in FOOT]}
 FX, FZ = np.meshgrid(fg, fg); FH = np.array([[elev(x, z) for x in fg] for z in fg]) + rockH(FX, FZ)
 cs = plt.contour(fg, fg, FH, levels=np.concatenate([np.arange(0.5, 6.01, 0.5), np.arange(7, 26, 1)])); cont = []
 for lev, segsC in zip(cs.levels, cs.allsegs):
@@ -199,6 +227,7 @@ for pp in pools:
 casaFar = ringsOf(Polygon(casa).intersection(far)); seaFar = ringsOf(unary_union([Polygon(r) for r in seaR]).intersection(far))
 # la sección dibujada (en coordenadas t a lo largo del corte, y en altura)
 tc = secc['coast'][0] if secc['coast'] else -10.0; pa, pb = secc['pools'][0][0]; ca, cb = secc['casa'][0]; FLOOR = -0.3; CASA0, CASA1 = 6.6, 9.4; ROOF_LO = 8.4
+_ft = tr(footP); ca, cb = (min(v[0] for v in _ft), max(v[1] for v in _ft)) if _ft else (ca, cb)
 ta = ca - 4.0
 avs = sorted([v for vv in secc['av'] for v in vv]); av0 = avs[0][0] if avs else cb + 20; av1 = avs[-1][1] if avs else av0 + 20
 AVY = 8.8
@@ -214,11 +243,17 @@ def gtop(t, hdem):
     return max(hdem, AVY)
 prof2 = [[t, round(gtop(t, h), 2)] for t, h in prof]
 secPoly = prof2 + [[prof2[-1][0], -3.5], [prof2[0][0], -3.5]]
-rects = [[pa - 0.7, pa, FLOOR, 2.3], [pb, pb + 0.7, FLOOR, 2.3], [ca, ca + 0.3, CASA0, ROOF_LO], [cb - 0.4, cb, CASA0, AVY], [ca, cb, CASA0 - 0.3, CASA0],
-         [ta - 0.5, ta, 0.6, CASA0 + 0.9]]                                                  # muros de las piscinas, casa (con el muro trasero que contiene la avenida) y muro de la plataforma
-roofSec = [[ca - 0.7, ROOF_LO - 0.22], [cb + 0.2, CASA1 - 0.22], [cb + 0.2, CASA1], [ca - 0.7, ROOF_LO]]   # cubierta inclinada de cobre
+rects = [[pa - 0.7, pa, FLOOR, 2.3], [pb, pb + 0.7, FLOOR, 2.3], [ca, cb, CASA0 - 0.3, CASA0], [cb - 0.4, cb, CASA0, AVY], [ta - 0.5, ta, 0.6, CASA0 + 0.9]]
+for w in WALLS:                                                                                         # muros de los vestuarios cortados
+    for a, b in tr(Polygon(w['r']).buffer(0)): rects.append([a, b, CASA0, w['top']])
+roofSec = []
+for rf in roofsD:                                                                                        # cubiertas cortadas (inclinadas)
+    for a, b in tr(Polygon(rf['r']).buffer(0)):
+        def yr(tc):
+            x, z = C[0] + nrm[0] * tc, C[1] + nrm[1] * tc; ut = np.subtract((x, z), O); return roofAt(float(ut @ Bv), float(ut @ Mv)) or rf['lo']
+        ya, yb = yr(a + 0.01), yr(b - 0.01); roofSec.append([[a - 0.4, ya - 0.18], [b, yb - 0.18], [b, yb], [a - 0.4, ya]])
 out = {'origin': P, 'blds': blds, 'sea': seaR, 'beach': beach, 'rock': rock, 'roads': roads, 'pools': pools, 'casa': casa, 'complejo': complejo,
-       'grid': {'ax': [round(v, 2) for v in ax1], 'h': H}, 'cont': cont, 'coastAxis': axis, 'nrm': [round(nrm[0], 4), round(nrm[1], 4)], 'C': [round(C[0], 2), round(C[1], 2)], 'prof': prof, 'rocks': bol, 'terr': terrR, 'muro45': muro45, 'casaRoof': casaRoof, 'corr': corrD, 'terrFar': ringsOf(terr.intersection(far)) if not terr.is_empty else [], 'rh': np.round(RH, 1).tolist(), 'muros': muros, 'secc': secc, 'casaFar': casaFar, 'seaFar': seaFar, 'sec': {'poly': secPoly, 'rects': rects, 'roof': roofSec, 'pa': pa, 'pb': pb, 'ca': ca, 'cb': cb, 'ta': round(ta, 2), 'av0': round(av0, 2), 'av1': round(av1, 2), 'avy': AVY, 'floor': FLOOR, 'casa0': CASA0, 'casa1': CASA1},
+       'grid': {'ax': [round(v, 2) for v in ax1], 'h': H}, 'cont': cont, 'coastAxis': axis, 'nrm': [round(nrm[0], 4), round(nrm[1], 4)], 'C': [round(C[0], 2), round(C[1], 2)], 'prof': prof, 'rocks': bol, 'terr': terrR, 'muro45': muro45, 'casaRoof': casaRoof, 'corr': corrD, 'arch': archD, 'terrFar': ringsOf(terr.intersection(far)) if not terr.is_empty else [], 'rh': np.round(RH, 1).tolist(), 'muros': muros, 'secc': secc, 'casaFar': casaFar, 'seaFar': seaFar, 'sec': {'poly': secPoly, 'rects': rects, 'roofs': roofSec, 'pa': pa, 'pb': pb, 'ca': ca, 'cb': cb, 'ta': round(ta, 2), 'av0': round(av0, 2), 'av1': round(av1, 2), 'avy': AVY, 'floor': FLOOR, 'casa0': CASA0, 'casa1': CASA1},
        'h': {'casa': round(elev(*Polygon(casa).centroid.coords[0]), 2), 'av': round(elev(85, -50), 2)}}
 json.dump(out, open(f'{ROOT}/motor/web/v013.json', 'w'), separators=(',', ':'))
 print('edificios', len(blds), 'mar', len(seaR), [len(r) for r in seaR][:5], 'playa', len(beach), 'roca', len(rock), 'calles', len(roads), 'piscinas', [len(p['r']) for p in pools], 'casa', len(casa or []), 'eje costa', axis, out['h'])
