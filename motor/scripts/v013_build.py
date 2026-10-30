@@ -146,12 +146,22 @@ def roofAt(u, t):
     for (ua, ub), (ta, tb), lo, hi in ROOFS:
         if min(ua, ub) <= u <= max(ua, ub) and ta <= t <= tb: return lo + (t - ta) / (tb - ta) * (hi - lo)
     return None
+def coverAt(u, t, e=0.25):
+    # cara inferior de lo que cubre el punto (cubierta de cobre o losa con jardín), o None si queda al aire
+    hs = []
+    for (ua, ub), (ta, tb), lo, hi in ROOFS:
+        if min(ua, ub) - e <= u <= max(ua, ub) + e and ta - e <= t <= tb + e: hs.append(lo + (min(max(t, ta), tb) - ta) / (tb - ta) * (hi - lo) - 0.17)
+    for (ua, ub), (ta, tb), y in SLABS:
+        if min(ua, ub) - e <= u <= max(ua, ub) + e and ta - e <= t <= tb + e: hs.append(y - 0.31)
+    return min(hs) if hs else None
 WALLS = []
 for r in MS['walls_ut']:
     g = Polygon(r).buffer(0)
     if g.is_empty or g.area < 0.05: continue
-    cu, ct = g.centroid.x, g.centroid.y; ry = roofAt(cu, ct)
-    top = (ry - 0.2) if ry else (8.95 if ct > 5.0 else 8.6)
+    cu, ct = g.centroid.x, g.centroid.y
+    smp = [pt for q in getattr(g, 'geoms', [g]) for pt in q.exterior.segmentize(0.4).coords] + [(cu, ct)]   # el muro nunca asoma por encima de lo que lo cubre
+    cov = [c for c in (coverAt(u, t) for u, t in smp) if c is not None]
+    top = min(cov) if cov else (8.95 if ct > 5.0 else 8.6)
     for q in getattr(g, 'geoms', [g]):
         WALLS.append({'r': [[round(v, 2) for v in P_(u, t)] for u, t in list(q.exterior.coords)[:-1]], 'top': round(top, 2)})
 RET = []                                                                                                # muro de contención de la avenida por el borde interior de la huella
