@@ -1,0 +1,7 @@
+ok 27883 B  datos/014/catastro/bu16.gml
+ok 27851 B  datos/014/catastro/bu17.gml
+ok 37577 B  datos/014/catastro/bu18.gml
+ok 44915 B  datos/014/catastro/bu19.gml
+ok 1211233 B  datos/014/orto/pnoa_actual.jpg
+ok 1805489 B  datos/014/orto/vuelo_1956.jpg
+ok 113091 B  datos/014/orto/historico_capacidades.xml
