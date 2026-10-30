@@ -64,17 +64,14 @@ land = Polygon(c + [(c[-1][0] + 4000, c[-1][1] + 4000), (c[0][0] + 4000, c[0][1]
 sea = bb.difference(land).simplify(0.5)
 seaR = [[(round(x, 2), round(z, 2)) for x, z in list(g.exterior.coords)[:-1]] for g in (sea.geoms if isinstance(sea, MultiPolygon) else [sea]) if g.area > 50]
 # relieve: rejilla estirada (3 m junto a las piscinas, ~25 m en los bordes) y curvas de nivel cada metro cerca de la costa
-ax1 = [0.0]; st = 3.0
-while ax1[-1] < R: ax1.append(ax1[-1] + st); st *= 1.025
+ax1 = [0.0]; st = 1.5
+while ax1[-1] < R: ax1.append(ax1[-1] + st); st *= 1.03
 ax1 = [-v for v in ax1[:0:-1]] + ax1
-H = [[round(elev(x, z), 2) for x in ax1] for z in ax1]
+H0 = np.array([[elev(x, z) for x in ax1] for z in ax1])
+_pre = True
+
 import matplotlib; matplotlib.use('Agg'); import matplotlib.pyplot as plt
-fg = np.arange(-360, 361, 2.0); FH = np.array([[elev(x, z) for x in fg] for z in fg])
-cs = plt.contour(fg, fg, FH, levels=np.arange(1, 26, 1)); cont = []
-for lev, segsC in zip(cs.levels, cs.allsegs):
-    for sg in segsC:
-        if len(sg) >= 4: cont.append({'h': float(lev), 'l': [[round(float(a), 1), round(float(b), 1)] for a, b in sg[::2]]})
-plt.close('all')
+fg = np.arange(-360, 361, 2.0)
 pts = np.array([q for l in coast for q in l.coords if math.hypot(*q) < 160]); pts = pts - pts.mean(0)
 w, v = np.linalg.eigh(pts.T @ pts); a = v[:, -1]
 if a[1] > 0: a = -a                                                    # eje de la costa hacia el norte (z negativa)
@@ -85,10 +82,71 @@ if nrm[0] < 0: nrm = [-nrm[0], -nrm[1]]
 pools.sort(key=lambda pp: -Polygon(pp['r']).area)
 C = list(Polygon(pools[0]['r']).centroid.coords[0])
 prof = [[round(t, 1), round(elev(C[0] + nrm[0] * t, C[1] + nrm[1] * t), 2)] for t in np.arange(-160, 220.1, 1.0)]
+FLOOR = -0.3; CASA0, CASA1 = 6.6, 9.4; ROOF_LO = 8.4
+# granito: cúpulas suaves en la franja de costa (a ambos lados) y en la roca de OSM; fuera de piscinas, playa, casa y terraza
+from shapely.prepared import prep
+sandU = unary_union([Polygon(r).buffer(0) for r in beach]) if beach else Polygon()
+casaP = Polygon(casa).buffer(0)
+mrr = list(casaP.minimum_rotated_rectangle.exterior.coords)[:4]
+e1 = np.subtract(mrr[1], mrr[0]); e2 = np.subtract(mrr[2], mrr[1]); Bv = e1 if np.hypot(*e1) > np.hypot(*e2) else e2; Bv = Bv / np.hypot(*Bv)
+if Bv[1] > 0: Bv = -Bv                                                         # eje de la casa hacia el norte
+Mv = np.array([-Bv[1], Bv[0]]);
+if np.dot(Mv, nrm) < 0: Mv = -Mv                                               # normal de la casa hacia tierra
+O = np.array(casaP.centroid.coords[0]); _cu = [float(np.dot(np.subtract(q, O), Bv)) for q in casa]; _ct = [float(np.dot(np.subtract(q, O), Mv)) for q in casa]
+uN, uS, tSea, tIn = max(_cu), min(_cu), min(_ct), max(_ct)
+P_ = lambda u, t: tuple(O + Bv * u + Mv * t)
+L45 = 19.5; S0 = (uN - 1.0, tSea); S1 = (S0[0] - L45 * 0.7071, S0[1] - L45 * 0.7071); S2 = (S0[0] - L45 * 1.05, tSea)
+tri45 = Polygon([P_(*S0), P_(*S1), P_(*S2)])
+strip = Polygon([P_(uS, tSea + 0.5), P_(uN - 1.0, tSea + 0.5), P_(uN - 1.0, tSea - 4.0), P_(uS, tSea - 4.0)])
+terr = unary_union([tri45, strip]).difference(casaP).difference(unary_union([Polygon(pp['r']) for pp in pools]).buffer(2))
+muro45 = [[round(v, 2) for v in P_(*S0)], [round(v, 2) for v in P_(*S1)]]
+casaRoof = {'O': [round(float(O[0]), 2), round(float(O[1]), 2)], 'M': [round(float(Mv[0]), 4), round(float(Mv[1]), 4)], 'B': [round(float(Bv[0]), 4), round(float(Bv[1]), 4)], 'tSea': round(tSea, 2), 'tIn': round(tIn, 2), 'lo': ROOF_LO, 'hi': CASA1}
+noRock = prep(unary_union([Polygon(pp['r']).buffer(0.9) for pp in pools] + [casaP.buffer(3), terr.buffer(1.5), sandU.buffer(-2)]))
+band = main.buffer(26).intersection(Point(C).buffer(420)); rockZone = unary_union([band] + [Polygon(r).buffer(0) for r in rock]); rz = prep(rockZone)
+rgB = np.random.default_rng(31); blobs = []; minx, minz, maxx, maxz = rockZone.bounds; k = 0
+while len(blobs) < 1500 and k < 60000:
+    k += 1; x, z = rgB.uniform(minx, maxx), rgB.uniform(minz, maxz); q = Point(x, z)
+    if not rz.contains(q) or noRock.contains(q): continue
+    dc = main.distance(q); seaSide = Polygon(seaR[0]).contains(q) if seaR else False
+    r = rgB.uniform(2.5, 8.5) * (0.8 if seaSide else 1.0); h = rgB.uniform(0.8, 3.4) * (0.85 if seaSide else 1.0) * (1.0 if dc < 18 else 0.7)
+    blobs.append((x, z, r, h, rgB.uniform(0.6, 1.0), rgB.uniform(0, math.pi)))
+def rockH(X, Zg):
+    out = np.zeros_like(X)
+    for (x, z, r, h, e, a) in blobs:
+        dx, dz = X - x, Zg - z; u = dx * math.cos(a) + dz * math.sin(a); v = (-dx * math.sin(a) + dz * math.cos(a)) / e
+        d2 = (u * u + v * v) / (r * r); m = d2 < 1
+        if m.any(): out[m] = np.maximum(out[m], h * (1 - d2[m]) ** 1.6)
+    return out
+AXg = np.array(ax1); XX, ZZ = np.meshgrid(AXg, AXg)
+mask = np.array([[0.0 if noRock.contains(Point(x, z)) else 1.0 for x in ax1] for z in ax1]) if False else None
+RH = rockH(XX, ZZ)
+for j, z in enumerate(ax1):
+    for i, x in enumerate(ax1):
+        if RH[j, i] > 0 and noRock.contains(Point(x, z)): RH[j, i] = 0
+HH_ = np.maximum(H0, 0) + RH
+corr = Polygon([P_(uS - 2, tIn - 0.2), P_(uN + 2, tIn - 0.2), P_(uN + 2, tIn + 3.2), P_(uS - 2, tIn + 3.2)])
+cut0 = prep(unary_union([casaP.buffer(0.3), corr, tri45.buffer(0.3)])); emb = prep(Polygon([P_(uS - 2, tIn + 3.4), P_(uN + 2, tIn + 3.4), P_(uN + 2, tIn + 14), P_(uS - 2, tIn + 14)]))
+for j, z in enumerate(ax1):
+    for i, x in enumerate(ax1):
+        q = Point(x, z)
+        if cut0.contains(q): HH_[j, i] = CASA0 - 0.05
+        elif emb.contains(q): HH_[j, i] = max(HH_[j, i], 8.7)
+H = np.round(HH_, 2).tolist()
+corrD = {'uS': round(uS, 2), 'uN': round(uN, 2), 'tIn': round(tIn, 2), 'tSea': round(tSea, 2)}
+FX, FZ = np.meshgrid(fg, fg); FH = np.array([[elev(x, z) for x in fg] for z in fg]) + rockH(FX, FZ)
+cs = plt.contour(fg, fg, FH, levels=np.concatenate([np.arange(0.5, 6.01, 0.5), np.arange(7, 26, 1)])); cont = []
+for lev, segsC in zip(cs.levels, cs.allsegs):
+    for sg in segsC:
+        if len(sg) >= 4: cont.append({'h': float(lev), 'l': [[round(float(a), 1), round(float(b), 1)] for a, b in sg[::2]]})
+plt.close('all')
+_tt = np.arange(-160, 220.1, 1.0); _px = C[0] + nrm[0] * _tt; _pz = C[1] + nrm[1] * _tt
+prof = [[round(float(t), 1), round(float(elev(x, z) + r), 2)] for t, x, z, r in zip(_tt, _px, _pz, rockH(_px, _pz))]
+terrR = [[round(x, 2), round(z, 2)] for x, z in list(max(getattr(terr, 'geoms', [terr]), key=lambda g: g.area).exterior.coords)[:-1]] if not terr.is_empty else []
 # rocas: polígonos de OSM y bolos a lo largo de la costa junto a las piscinas (fuera de piscinas y casa)
 rng = np.random.default_rng(13); avoid = unary_union([Polygon(pp['r']).buffer(1.5) for pp in pools] + [Polygon(casa).buffer(2.0)])
 coastL = main; bol = []
-for rr in rock:
+SKIP_BOLOS = True
+for rr in ([] if SKIP_BOLOS else rock):
     poly = Polygon(rr).buffer(0)
     if poly.area < 10: continue
     n = int(min(260, poly.area / 30)); minx, minz, maxx, maxz = poly.bounds; k = 0
@@ -96,14 +154,14 @@ for rr in rock:
         k += 1; q = Point(rng.uniform(minx, maxx), rng.uniform(minz, maxz))
         if poly.contains(q) and not avoid.contains(q): bol.append([round(q.x, 2), round(q.y, 2), round(float(rng.uniform(1.2, 4.2)), 2), round(float(rng.uniform(0.6, 2.6)), 2), round(float(rng.uniform(0, 6.28)), 2)]); n -= 1
 avoid2 = unary_union([Polygon(pp['r']).buffer(1.2) for pp in pools] + [Polygon(casa).buffer(14.0)])
-for k in range(5200):                                                   # granito junto a las piscinas: bolos grandes a ambos lados de la línea de costa
+for k in range(0 if SKIP_BOLOS else 5200):                                                   # granito junto a las piscinas: bolos grandes a ambos lados de la línea de costa
     q = coastL.interpolate(rng.uniform(0, 1), normalized=True)
     if math.hypot(q.x - C[0], q.y - C[1]) > 140: continue
     off = rng.normal(-2, 11); q2 = Point(q.x + nrm[0] * off, q.y + nrm[1] * off)
     if avoid2.contains(q2): continue
     big = rng.random() < 0.35
     bol.append([round(q2.x, 2), round(q2.y, 2), round(float(rng.uniform(3.0, 7.5) if big else rng.uniform(1.4, 3.6)), 2), round(float(rng.uniform(1.4, 3.8) if big else rng.uniform(0.6, 2.2)), 2), round(float(rng.uniform(0, 6.28)), 2)])
-for k in range(1400):
+for k in range(0 if SKIP_BOLOS else 1400):
     t = rng.uniform(0, 1); q = coastL.interpolate(t, normalized=True)
     if math.hypot(q.x, q.y) > 330: continue
     off = rng.normal(0, 7); q2 = Point(q.x + nrm[0] * off, q.y + nrm[1] * off)
@@ -140,17 +198,27 @@ for pp in pools:
     band = Polygon(pp['out']).difference(Polygon(pp['r'])); pp['bandFar'] = ringsOf(band.intersection(far)); pp['waterFar'] = ringsOf(Polygon(pp['r']).intersection(far))
 casaFar = ringsOf(Polygon(casa).intersection(far)); seaFar = ringsOf(unary_union([Polygon(r) for r in seaR]).intersection(far))
 # la sección dibujada (en coordenadas t a lo largo del corte, y en altura)
-tc = secc['coast'][0] if secc['coast'] else -10.0; pa, pb = secc['pools'][0][0]; ca, cb = secc['casa'][0]; FLOOR = -0.8; CASA0, CASA1 = 3.0, 6.6
+tc = secc['coast'][0] if secc['coast'] else -10.0; pa, pb = secc['pools'][0][0]; ca, cb = secc['casa'][0]; FLOOR = -0.3; CASA0, CASA1 = 6.6, 9.4; ROOF_LO = 8.4
+ta = ca - 4.0
+avs = sorted([v for vv in secc['av'] for v in vv]); av0 = avs[0][0] if avs else cb + 20; av1 = avs[-1][1] if avs else av0 + 20
+AVY = 8.8
 def gtop(t, hdem):
     if t < pa: return max(-2.6, -2.6 * (pa - t) / 120.0)
     if t <= pb: return FLOOR
-    if ca <= t <= cb: return CASA0
-    return hdem
+    if t < ta: return max(hdem, 0.6)
+    if t < cb: return CASA0
+    if t < av0 - 2.0: return AVY - 0.1
+    if t < av0: return AVY + 0.15
+    if t <= av1: return AVY
+    if t < av1 + 3.0: return AVY + 0.15
+    return max(hdem, AVY)
 prof2 = [[t, round(gtop(t, h), 2)] for t, h in prof]
 secPoly = prof2 + [[prof2[-1][0], -3.5], [prof2[0][0], -3.5]]
-rects = [[pa - 0.7, pa, FLOOR, 2.0], [pb, pb + 0.7, FLOOR, 2.0], [ca, ca + 0.3, CASA0, CASA1], [cb - 0.3, cb, CASA0, CASA1], [ca, cb, CASA1 - 0.35, CASA1], [ca, cb, CASA0 - 0.3, CASA0]]
+rects = [[pa - 0.7, pa, FLOOR, 2.3], [pb, pb + 0.7, FLOOR, 2.3], [ca, ca + 0.3, CASA0, ROOF_LO], [cb - 0.4, cb, CASA0, AVY], [ca, cb, CASA0 - 0.3, CASA0],
+         [ta - 0.5, ta, 0.6, CASA0 + 0.9]]                                                  # muros de las piscinas, casa (con el muro trasero que contiene la avenida) y muro de la plataforma
+roofSec = [[ca - 0.7, ROOF_LO - 0.22], [cb + 0.2, CASA1 - 0.22], [cb + 0.2, CASA1], [ca - 0.7, ROOF_LO]]   # cubierta inclinada de cobre
 out = {'origin': P, 'blds': blds, 'sea': seaR, 'beach': beach, 'rock': rock, 'roads': roads, 'pools': pools, 'casa': casa, 'complejo': complejo,
-       'grid': {'ax': [round(v, 2) for v in ax1], 'h': H}, 'cont': cont, 'coastAxis': axis, 'nrm': [round(nrm[0], 4), round(nrm[1], 4)], 'C': [round(C[0], 2), round(C[1], 2)], 'prof': prof, 'rocks': bol, 'muros': muros, 'secc': secc, 'casaFar': casaFar, 'seaFar': seaFar, 'sec': {'poly': secPoly, 'rects': rects, 'pa': pa, 'pb': pb, 'ca': ca, 'cb': cb, 'floor': FLOOR, 'casa0': CASA0, 'casa1': CASA1},
+       'grid': {'ax': [round(v, 2) for v in ax1], 'h': H}, 'cont': cont, 'coastAxis': axis, 'nrm': [round(nrm[0], 4), round(nrm[1], 4)], 'C': [round(C[0], 2), round(C[1], 2)], 'prof': prof, 'rocks': bol, 'terr': terrR, 'muro45': muro45, 'casaRoof': casaRoof, 'corr': corrD, 'terrFar': ringsOf(terr.intersection(far)) if not terr.is_empty else [], 'rh': np.round(RH, 1).tolist(), 'muros': muros, 'secc': secc, 'casaFar': casaFar, 'seaFar': seaFar, 'sec': {'poly': secPoly, 'rects': rects, 'roof': roofSec, 'pa': pa, 'pb': pb, 'ca': ca, 'cb': cb, 'ta': round(ta, 2), 'av0': round(av0, 2), 'av1': round(av1, 2), 'avy': AVY, 'floor': FLOOR, 'casa0': CASA0, 'casa1': CASA1},
        'h': {'casa': round(elev(*Polygon(casa).centroid.coords[0]), 2), 'av': round(elev(85, -50), 2)}}
 json.dump(out, open(f'{ROOT}/motor/web/v013.json', 'w'), separators=(',', ':'))
 print('edificios', len(blds), 'mar', len(seaR), [len(r) for r in seaR][:5], 'playa', len(beach), 'roca', len(rock), 'calles', len(roads), 'piscinas', [len(p['r']) for p in pools], 'casa', len(casa or []), 'eje costa', axis, out['h'])

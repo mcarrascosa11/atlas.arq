@@ -1,1 +1,1 @@
-{"fetch": [{"url": "https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A90%5D%3B%0A%28way%28around%3A260%2C41.19274%2C-8.70748%29%3Brelation%28around%3A260%2C41.19274%2C-8.70748%29%3Bnode%28around%3A260%2C41.19274%2C-8.70748%29%5B~%22.%22~%22.%22%5D%3B%29%3Bout%20geom%3B", "out": "datos/013/osm_detalle.json", "timeout": 120}], "dir": "datos/013", "log": "datos/013/fetch_log2.txt", "run": 3}
+{"page": "v013.html", "frames": 1500, "fps": 30, "data": "motor/ci/datos013.sh", "music": "motor/audio/music13.py", "out": "013_piscina_mares", "run": 4}

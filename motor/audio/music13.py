@@ -1,6 +1,6 @@
-# Original cue for 013 (Piscina das Marés, Leça da Palmeira). Calm Atlantic mood: soft marimba-like arpeggio in D major, warm pad and filtered
-# noise swells like waves. 0–8 s: waves and a sparse arpeggio; 8.8–13.6 s: the walls rise, one low wooden knock per wall; 14–21 s: section, low drone
-# and the arpeggio held; 21–27 s: plan, the arpeggio brightens; 27–33 s: "835 drawings", pencil ticks that speed up; 33–40 s: warm chords; 40–50 s: resolve.
+# Original cue for 013 (Piscina das Marés, Leça da Palmeira). Calm Atlantic mood: soft marimba-like arpeggio in D major, warm pad and quiet
+# filtered-noise waves. 3.6 s: the walls (wooden knocks); 8 s: plan; 14 s: section (low drone); 22 s: between walls, closed; 25.6 s: the sea appears
+# (open chord); 28 s: pumped seawater (low pulses); 34 s: warm chords; 40 s: resolve.
 import numpy as np, scipy.signal as ss, wave, sys
 SR = 44100; DUR = 50.0; N = int(SR * DUR); rng = np.random.default_rng(13)
 BUS = {k: [np.zeros(N), np.zeros(N)] for k in ('arp', 'pad', 'hit', 'tick', 'sea')}
@@ -38,34 +38,38 @@ def arp(t0, t1, notes, amp=0.15, pan=0.3, dur=0.9):
 x = np.arange(N) / SR; nz = rng.normal(0, 1, N); swell = 0.55 + 0.45 * np.sin(2 * np.pi * x / 7.0 - 1.2) ** 2
 sea = ss.sosfilt(ss.butter(2, [120, 1400], 'band', fs=SR, output='sos'), nz) * swell * 0.18
 BUS['sea'][0] += sea; BUS['sea'][1] += np.roll(sea, int(0.013 * SR))
-# 0–8.8: arpegio escaso en Re mayor
-arp(0.0, 8.6, [62, 69, 74, 78, 74, 69], 0.13)
-add(pad([50, 57, 62, 66], 9.0, 0.05), 0.0, bus='pad')
-# 8.8–13.6: los muros, un golpe de madera grave por tramo
-for i in range(10): add(knock(mtof(43 + (i % 3) * 2), 0.16), 8.9 + i * 0.25, pan=-0.5 + i * 0.1, bus='hit')
-arp(8.8, 13.8, [62, 66, 69, 74, 76, 74, 69, 66], 0.14)
-add(pad([50, 57, 62, 69], 5.4, 0.06), 8.6, bus='pad')
-# 14–21: la sección, dron grave y el arpegio que se sostiene
-add(drone(mtof(38), 7.2, 0.07), 14.0, bus='pad')
-arp(14.0, 21.0, [69, 74, 76, 74], 0.11, dur=1.2)
-add(pad([47, 54, 59, 62, 66], 7.4, 0.06), 13.8, bus='pad')
-# 21–27: la planta, el arpegio sube y se aclara
-arp(21.0, 27.2, [62, 66, 69, 74, 78, 81, 78, 74], 0.14)
-add(pad([50, 57, 62, 66, 69], 6.4, 0.06), 20.8, bus='pad')
-# 27–33: 835 dibujos, trazos de lápiz que se aceleran
-tt = 27.2
-while tt < 32.8: add(tick(0.16 * (0.4 + 0.6 * (tt - 27.2) / 5.6)), tt + rng.normal(0, 0.006), pan=rng.uniform(-0.6, 0.6), bus='tick'); tt += max(0.035, 0.22 - (tt - 27.2) * 0.035)
-arp(27.2, 33.2, [64, 69, 73, 76, 73, 69], 0.10)
-add(pad([45, 52, 57, 61, 64], 6.4, 0.05), 27.0, bus='pad')
-# 33–40: acordes cálidos
-arp(33.2, 40.2, [62, 66, 69, 74, 69, 66, 71, 74], 0.13)
-add(pad([43, 50, 55, 59, 62], 7.4, 0.07), 33.0, bus='pad')
+# 0–3.6: arpegio escaso en Re mayor
+arp(0.0, 3.8, [62, 69, 74, 78, 74, 69], 0.13)
+add(pad([50, 57, 62, 66], 4.4, 0.05), 0.0, bus='pad')
+# 3.6–8.2: los muros, un golpe de madera grave por tramo
+for i in range(10): add(knock(mtof(43 + (i % 3) * 2), 0.16), 3.9 + i * 0.27, pan=-0.5 + i * 0.1, bus='hit')
+arp(3.6, 8.4, [62, 66, 69, 74, 76, 74, 69, 66], 0.14)
+add(pad([50, 57, 62, 69], 5.0, 0.06), 3.4, bus='pad')
+# 8.2–14: la planta, el arpegio se aclara
+arp(8.4, 14.2, [62, 66, 69, 74, 78, 81, 78, 74], 0.14)
+add(pad([50, 57, 62, 66, 69], 6.2, 0.06), 8.2, bus='pad')
+# 14–22: la sección, dron grave y el arpegio sostenido
+add(drone(mtof(38), 8.2, 0.07), 14.0, bus='pad')
+arp(14.2, 22.2, [69, 74, 76, 74], 0.11, dur=1.2)
+add(pad([47, 54, 59, 62, 66], 8.4, 0.06), 13.8, bus='pad')
+# 22–25.6: entre muros, todo se cierra; 25.6: aparece el mar, acorde abierto
+add(pad([45, 52, 57], 3.8, 0.05, 900), 22.0, bus='pad')
+for k in range(6): add(mallet(mtof(57 + (k % 2) * 3), 0.6, 0.08), 22.2 + k * 0.55, bus='arp')
+add(pad([50, 57, 62, 66, 69, 74], 3.0, 0.09, 2400), 25.5, bus='pad'); add(mallet(mtof(81), 2.2, 0.16), 25.6, bus='hit'); add(mallet(mtof(74), 2.2, 0.12), 25.62, bus='hit')
+arp(25.8, 28.4, [74, 78, 81, 86, 81, 78], 0.12)
+# 28–34: el agua, pulsos de bomba graves y arpegio
+for k in range(10): add(knock(mtof(36), 0.10), 28.5 + k * 0.56, bus='hit')
+arp(28.4, 34.2, [62, 66, 69, 74, 69, 66], 0.11)
+add(pad([45, 52, 57, 61, 64], 6.2, 0.05), 28.2, bus='pad')
+# 34–40: acordes cálidos
+arp(34.2, 40.2, [62, 66, 69, 74, 69, 66, 71, 74], 0.13)
+add(pad([43, 50, 55, 59, 62], 6.4, 0.07), 34.0, bus='pad')
 # 40–50: resolución
 arp(40.2, 47.6, [62, 69, 74, 78, 81, 78, 74, 69], 0.12)
 add(pad([50, 57, 62, 66, 69, 74], 10.0, 0.08, 1700), 40.0, bus='pad')
 add(mallet(mtof(74), 3.0, 0.16), 47.6, bus='hit')
 lp = lambda a, f: ss.sosfilt(ss.butter(2, f, 'low', fs=SR, output='sos'), a); hp = lambda a, f: ss.sosfilt(ss.butter(2, f, 'high', fs=SR, output='sos'), a)
-G = {'arp': 1.0, 'pad': 0.85, 'hit': 0.85, 'tick': 0.7, 'sea': 0.9}
+G = {'arp': 1.0, 'pad': 0.85, 'hit': 0.85, 'tick': 0.7, 'sea': 0.32}
 FX = {'arp': lambda a: lp(hp(a, 120), 8000), 'pad': lambda a: lp(hp(a, 80), 3800), 'hit': lambda a: lp(hp(a, 60), 6000), 'tick': lambda a: hp(a, 1800), 'sea': lambda a: a}
 L = np.zeros(N); R = np.zeros(N)
 for k, (a, b) in BUS.items(): L += G[k] * FX[k](a); R += G[k] * FX[k](b)
