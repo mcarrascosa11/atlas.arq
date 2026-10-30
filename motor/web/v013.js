@@ -113,14 +113,23 @@ export async function init() {
     try { f = THREE.ShapeUtils.triangulateShape(v2, hv); } catch (e) { }
     for (const t of f) { const p = t.map(i => [all[i][0], roofY(all[i][0], all[i][1]) + 0.02, all[i][1]]); push3(Ar.P, Ar.B, Ar.T, 8, 9.5, ...upTri(p[0], p[1], p[2])); }
     G.add(mesh(Aw, casaM), mesh(Ar, roofM), segs(E, lineMat(INK, LW.B))); };
-  casaBuild(D.casa, [], CASA); for (const q of D.casaFar) casaBuild(q.o, q.h, CASAF);
-  // muro a 45º que protege la terraza del bar del viento del norte
-  { const [a, b] = D.muro45, dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz), nx = -dz / l * 0.2, nz = dx / l * 0.2; const Am = mk(), Em = [];
-    extrude([[[a[0] + nx, a[1] + nz], [b[0] + nx, b[1] + nz], [b[0] - nx, b[1] - nz], [a[0] - nx, a[1] - nz]]], 3.0, S.casa0 + 2.0, Am, Em, { corner: 30 });
-    const far = side((a[0] + b[0]) / 2, (a[1] + b[1]) / 2) > 0; CASA.add(mesh(Am, casaM), segs(Em, lineMat(INK, LW.B))); if (far) CASAF.add(mesh(Am, casaM), segs(Em, lineMat(INK, LW.B))); }
-  // terraza de la casa de baños, a la cota del suelo de los vestuarios
-  { const At = mk(), Et = []; if (D.terr.length > 2) { extrude([D.terr], 3.0, S.casa0, At, Et, { corner: 25 }); CASA.add(mesh(At, casaM), segs(Et, lineMat(INK, LW.C))); }
-    for (const q of D.terrFar) { const A2 = mk(), E2 = []; extrude([q.o, ...q.h], 3.0, S.casa0, A2, E2, { corner: 25 }); CASAF.add(mesh(A2, casaM), segs(E2, lineMat(INK, LW.C))); } }
+  // vestuarios a partir de la planta del Siza Atlas: muros de hormigón, cubiertas de cobre de poca pendiente (más altas hacia tierra),
+  // losas con jardín al norte y al sur y el muro que contiene la avenida
+  const ROOF3D = []; const AR = D.arch, gardenM = fillMat('#E8EBDD', { hatch: 0, side: 0.9, shade: 0.8 });
+  const isFar = (r) => side(r.reduce((m, p) => m + p[0], 0) / r.length, r.reduce((m, p) => m + p[1], 0) / r.length) > 0;
+  const both = (r, fn) => { fn(CASA); if (isFar(r)) fn(CASAF); };
+  for (const w of AR.walls) both(w.r, (G) => { const A2 = mk(), E2 = []; extrude([w.r], S.casa0 - 0.3, w.top, A2, E2, { corner: 30 }); G.add(mesh(A2, casaM), segs(E2, lineMat(INK, LW.B))); });
+  for (const [a, b] of AR.ret) { const dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1, nx = -dz / l * 0.22, nz = dx / l * 0.22;
+    const r = [[a[0] + nx, a[1] + nz], [b[0] + nx, b[1] + nz], [b[0] - nx, b[1] - nz], [a[0] - nx, a[1] - nz]];
+    both(r, (G) => { const A2 = mk(), E2 = []; extrude([r], S.casa0 - 0.4, 8.95, A2, E2, { corner: 30 }); G.add(mesh(A2, casaM), segs(E2, lineMat(INK, LW.B))); }); }
+  for (const rf of AR.roofs) both(rf.r, (G) => { const A2 = mk(), E2 = []; const [p0, p1, p2, p3] = rf.r; const y = [rf.lo, rf.lo, rf.hi, rf.hi];
+    const top = [p0, p1, p2, p3].map((p, k) => [p[0], y[k], p[1]]), bot = [p0, p1, p2, p3].map((p, k) => [p[0], y[k] - 0.16, p[1]]);
+    push3(A2.P, A2.B, A2.T, 7, 9.6, ...upTri(top[0], top[1], top[2])); push3(A2.P, A2.B, A2.T, 7, 9.6, ...upTri(top[0], top[2], top[3]));
+    for (let k = 0; k < 4; k++) { const a = top[k], b = top[(k + 1) % 4], c = bot[(k + 1) % 4], d = bot[k]; push3(A2.P, A2.B, A2.T, 7, 9.6, a, b, c); push3(A2.P, A2.B, A2.T, 7, 9.6, a, c, d); push3(A2.P, A2.B, A2.T, 7, 9.6, a, c, b); push3(A2.P, A2.B, A2.T, 7, 9.6, a, d, c);
+      E2.push(...a, ...b, ...d, ...c); }
+    for (let k = 1; k < 8; k++) { const f = k / 8, a = [p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f], b = [p3[0] + (p2[0] - p3[0]) * f, p3[1] + (p2[1] - p3[1]) * f]; E2.push(a[0], rf.lo + 0.01, a[1], b[0], rf.hi + 0.01, b[1]); }
+    const mm = mesh(A2, roofM), ss = segs(E2, lineMat(INK, LW.C)); ROOF3D.push(mm, ss); G.add(mm, ss); });
+  for (const sl of AR.slabs) both(sl.r, (G) => { const A2 = mk(), E2 = []; extrude([sl.r], sl.y - 0.3, sl.y, A2, E2, { corner: 30 }); G.add(mesh(A2, gardenM), segs(E2, lineMat(INK, LW.C))); });
   // en discontinuas: lo que todavía no existe (antes de 1961)
   const ghostL = lineMat('#8E8B84', 1.0); ghostL.dashed = true; ghostL.dashSize = 0.9; ghostL.gapSize = 0.7; const GHOST = new THREE.Group(); scene.add(GHOST);
   { const E = []; const ring = (r, y) => { for (let k = 0; k < r.length; k++) { const a = r[k], b = r[(k + 1) % r.length]; E.push(a[0], y, a[1], b[0], y, b[1]); } };
@@ -145,27 +154,21 @@ export async function init() {
       quad(Ak, a, b, [b[0], b[1] - 0.9], [a[0], a[1] - 0.9]);                                              // línea de terreno cortada
       quad(Ag, [a[0], a[1] - 0.9], [b[0], b[1] - 0.9], [b[0], -5], [a[0], -5]); }                         // tierra
     for (const [t0, t1, y0, y1] of S.rects) poly([[t0, y0], [t1, y0], [t1, y1], [t0, y1]], Ak);
-    if (S.roof) poly(S.roof, Ak);
+    for (const r of (S.roofs || [])) poly(r, Ak);
     SEC.add(mesh(Ak, secInk)); const gm = mesh(Ag, earthM); gm.position.set(-A[0] * 0.03, 0, -A[1] * 0.03); SEC.add(gm);
     const Aw = mk(); const seaTop = 0.45; const sw = S.poly.filter(p => p[0] <= S.pa); poly([...sw.map(p => [p[0], p[1]]).reverse(), [sw[0][0], seaTop], [S.pa, seaTop]].reverse(), Aw);
     poly([[S.pa, S.floor], [S.pb, S.floor], [S.pb, WL], [S.pa, WL]], Aw); const wm = mesh(Aw, poolM); wm.position.set(-A[0] * 0.02, 0, -A[1] * 0.02); SEC.add(wm);
     const yv = S.avy + 0.15;
     const sl = lineMat(RED, 2.2); sl.dashed = true; sl.dashSize = 1.4; sl.gapSize = 1.0; const a = P3(S.av0 - 1.2, yv + 1.55), b = P3(-150, yv + 1.55); SEC.add(segs([...a, ...b], sl));
     const m = new THREE.Mesh(manG, pplM); m.position.set(...P3(S.av0 - 1.0, yv)); SEC.add(m); SEC.userData = { yv }; }
-  // muro de contención de la avenida y rampa de entrada: se baja entre muros desde la acera hasta el suelo de los vestuarios
-  const CD = D.corr, atB = (u, t, y) => [CR.O[0] + CR.B[0] * u + CR.M[0] * t, y, CR.O[1] + CR.B[1] * u + CR.M[1] * t];
-  const ENT = new THREE.Group(); scene.add(ENT);
-  { const Aw = mk(), Ew = [], Ar = mk(), Er = []; const t0 = CD.tIn + 3.2, t1 = t0 + 0.45;
-    const ring = [[CD.uS - 2, t0], [CD.uN + 2, t0], [CD.uN + 2, t1], [CD.uS - 2, t1]].map(([u, t]) => { const p = atB(u, t, 0); return [p[0], p[2]]; });
-    extrude([ring], S.casa0 - 0.4, 8.95, Aw, Ew, { corner: 30 });
-    const uA = CD.uN - 1.5, uB = CD.uN - 22, ta = CD.tIn + 0.1, tb = CD.tIn + 3.15;
-    const q = [atB(uA, ta, 8.75), atB(uA, tb, 8.75), atB(uB, tb, S.casa0 + 0.02), atB(uB, ta, S.casa0 + 0.02)];
+  // rampa de entrada: se baja desde la acera de la avenida, entre el muro de contención y los muros de los vestuarios
+  const CD = D.corr, atB = (u, t, y) => [AR.O[0] + AR.B[0] * u + AR.M[0] * t, y, AR.O[1] + AR.B[1] * u + AR.M[1] * t];
+  const ENT = new THREE.Group(); scene.add(ENT); const RP = AR.ramp;
+  { const Ar = mk(), Er = []; const q = [atB(RP.u0, RP.t0, RP.y0), atB(RP.u0, RP.t1, RP.y0), atB(RP.u1, RP.t1, S.casa0 + 0.02), atB(RP.u1, RP.t0, S.casa0 + 0.02)];
     push3(Ar.P, Ar.B, Ar.T, 6, 9, ...upTri(q[0], q[1], q[2])); push3(Ar.P, Ar.B, Ar.T, 6, 9, ...upTri(q[0], q[2], q[3])); Er.push(...q[0], ...q[1], ...q[1], ...q[2], ...q[2], ...q[3], ...q[3], ...q[0]);
-    for (let k = 1; k < 14; k++) { const f = k / 14, a = [uA + (uB - uA) * f, ta], b = [uA + (uB - uA) * f, tb], y = 8.75 + (S.casa0 - 8.75) * f; Er.push(...atB(a[0], a[1], y + 0.01), ...atB(b[0], b[1], y + 0.01)); }
-    const fl = [atB(uB, ta, S.casa0 + 0.02), atB(uB, tb, S.casa0 + 0.02), atB(CD.uS - 1, tb, S.casa0 + 0.02), atB(CD.uS - 1, ta, S.casa0 + 0.02)];
-    push3(Ar.P, Ar.B, Ar.T, 6, 9, ...upTri(fl[0], fl[1], fl[2])); push3(Ar.P, Ar.B, Ar.T, 6, 9, ...upTri(fl[0], fl[2], fl[3]));
-    ENT.add(mesh(Aw, casaM), segs(Ew, lineMat(INK, LW.B)), mesh(Ar, flatM('#F3F1EA')), segs(Er, lineMat('#9C998F', 0.6)));
-    for (const f of [0.15, 0.32, 0.47, 0.66, 0.84]) { const u = uA + (uB - uA) * f, t = ta + 0.9 + (f * 7 % 1.3), y = 8.75 + (S.casa0 - 8.75) * f; const m = new THREE.Mesh(manG, pplM); m.position.set(...atB(u, t, y)); ENT.add(m); } }
+    for (let k = 1; k < 14; k++) { const f = k / 14, u = RP.u0 + (RP.u1 - RP.u0) * f, y = RP.y0 + (S.casa0 - RP.y0) * f; Er.push(...atB(u, RP.t0, y + 0.01), ...atB(u, RP.t1, y + 0.01)); }
+    ENT.add(mesh(Ar, flatM('#F3F1EA')), segs(Er, lineMat('#9C998F', 0.6)));
+    for (const f of [0.15, 0.32, 0.47, 0.66, 0.84]) { const u = RP.u0 + (RP.u1 - RP.u0) * f, t = RP.t0 + 0.9 + (f * 7 % 1.6), y = RP.y0 + (S.casa0 - RP.y0) * f; const m = new THREE.Mesh(manG, pplM); m.position.set(...atB(u, t, y)); ENT.add(m); } }
   // el agua: se toma del mar, se trata en la casa y llega a la piscina (esquema)
   const pipeL = lineMat(RED, 3.0); pipeL.dashed = true; pipeL.dashSize = 1.6; pipeL.gapSize = 1.1; const PIPE = new THREE.Group(); scene.add(PIPE);
   { const p0 = [C[0] - N[0] * 22 + A[0] * 6, 0.9, C[1] - N[1] * 22 + A[1] * 6], p1 = atB(CD.uS + 8, CD.tSea - 0.5, S.casa0 + 0.6), p2 = [C[0] + N[0] * 4, 2.3, C[1] + N[1] * 4];
@@ -185,7 +188,7 @@ export async function init() {
     MUROS.scale.y = Math.max(0.001, smr(wl)); POOLS.children.forEach(c => { if (WALLS.includes(c)) c.scale.y = Math.max(0.001, smr(wl)); });
     for (const w of WALLS) w.material = red > 0.5 ? redM : casaM; MUROS.userData.MN.visible = !sec;
     const wf = ph.water ?? 1; for (const w of WATER) { w.visible = wf > 0.02; w.position.y = PF + (WL - PF) * smr(wf); }
-    const gh = ph.ghost ?? 0; GHOST.visible = gh > 0.02; setLineOpacity(ghostL, gh);
+    const gh = ph.ghost ?? 0; GHOST.visible = gh > 0.02; setLineOpacity(ghostL, gh); ROOF3D.forEach(m => { m.visible = !ph.noRoofs; });
     const pp = ph.pipe ?? 0; PIPE.visible = pp > 0.02; setLineOpacity(pipeL, pp); pipeL.dashOffset = -t * 2.4; ENT.visible = !sec || true;
     const pe = ph.people ?? 1; PPL.forEach((p, k) => { let on = pe > p.a; if (sec && side(p.x, p.z) <= 0) on = false; if (p.kind === 'swim' && wf < 0.95) on = false; p.m.visible = on; if (!on) return;
       if (p.kind === 'swim') p.m.position.set(p.x + Math.sin(t * 0.6 + p.ph) * 0.8, WL - 1.32 + Math.sin(t * 2 + p.ph) * 0.05, p.z + Math.cos(t * 0.5 + p.ph) * 0.8);
@@ -208,7 +211,7 @@ export async function init() {
   const azOf = (dx, dz) => Math.atan2(dx, dz) * 180 / Math.PI;
   const at = (t, y, u = 0) => [C[0] + N[0] * t + A[0] * u, y, C[1] + N[1] * t + A[1] * u];
   const HOOKV = azOf(-N[0] * 0.55 - A[0] * 0.83, -N[1] * 0.55 - A[1] * 0.83), SECF = azOf(-A[0], -A[1]), PLANV = azOf(-A[0], -A[1] + 1e-4), LANDV = azOf(N[0] * 0.8 - A[0] * 0.6, N[1] * 0.8 - A[1] * 0.6);
-  const CORRV = azOf(CR.B[0], CR.B[1]), REVV = azOf(CR.M[0] * 0.8 + CR.B[0] * 0.6, CR.M[1] * 0.8 + CR.B[1] * 0.6), SEAV = HOOKV;
+  const CORRV = azOf(AR.B[0], AR.B[1]), REVV = azOf(AR.M[0] * 0.8 + AR.B[0] * 0.6, AR.M[1] * 0.8 + AR.B[1] * 0.6), SEAV = HOOKV;
   const K = [
     { t: 0.0, tg: at(16, 5, 8), z: 64, az: HOOKV, el: 38 },
     { t: 3.6, tg: at(10, 4, 4), z: 56, az: HOOKV + 6, el: 42 },
@@ -217,8 +220,8 @@ export async function init() {
     { t: 13.6, tg: at(28, 0, 20), z: 78, az: PLANV, el: 89.4 },
     { t: 15.0, tg: at(80, 7, 0), z: 30, az: SECF, el: 4 },
     { t: 21.6, tg: at(-6, 5, 0), z: 30, az: SECF, el: 4 },
-    { t: 23.0, tg: atB(CD.uN - 10, CD.tIn + 1.6, 7.6), z: 17, az: CORRV, el: 40 },
-    { t: 25.2, tg: atB(CD.uN - 20, CD.tIn + 1.0, 7.0), z: 18, az: CORRV + 10, el: 34 },
+    { t: 23.0, tg: atB(RP.u0 - 4, (RP.t0 + RP.t1) / 2, 8.0), z: 17, az: CORRV, el: 40 },
+    { t: 25.2, tg: atB(RP.u1 + 2, (RP.t0 + RP.t1) / 2 - 2, 7.0), z: 19, az: CORRV + 10, el: 34 },
     { t: 27.6, tg: at(-6, 2, 2), z: 46, az: REVV, el: 24 },
     { t: 28.8, tg: at(4, 3, 0), z: 52, az: HOOKV + 22, el: 46 },
     { t: 33.8, tg: at(6, 3, 2), z: 48, az: HOOKV + 28, el: 44 },
@@ -247,7 +250,7 @@ export async function init() {
   };
   window.renderCover = () => { document.body.classList.add('cover');
     return window.shot({ t: 20, tg: at(4, 30, 0), z: 54, az: SEAV + 4, el: 34, ph: {}, kick: '', title: '' }); };
-  window.B13 = { at, azOf, A, N, C, S };
+  window.B13 = { at, azOf, A, N, C, S, atB, AR };
   window.READY = true;
 }
 
