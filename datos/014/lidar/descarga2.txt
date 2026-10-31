@@ -1,0 +1,2 @@
+FALLO datos/014/lidar/explora/archivos_LIDA3.html: HTTP Error 403: Forbidden
+FALLO datos/014/lidar/explora/archivos_LIDA2.html: HTTP Error 403: Forbidden
