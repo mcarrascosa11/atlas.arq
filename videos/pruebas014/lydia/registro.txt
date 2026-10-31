@@ -1,0 +1,6 @@
+historial 200
+encontrados True True [('Lydia - Warm, Energetic and Confident', 1793478808), ('Lydia - Warm, Energetic and Confident', 1793479245)]
+audio A 200 667699
+audio B 200 215885
+frases 10 4
+ok ['L1_pregunta_lydia.mp4', 'L2_original_lydia.mp4', 'L3_gancho_lydia.mp4', 'L4_gancho_lydia_sin_titulos.mp4']
