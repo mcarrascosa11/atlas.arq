@@ -1,1 +1,1 @@
-{"prep": "motor/blender/lidar014.py", "dir": "datos/014/lidar", "run": "lidar3"}
+{"engine": "blender", "scene": "motor/blender/vega_video.py", "data": "motor/blender/datos014.sh", "music": "motor/blender/music014.py", "texts": "motor/blender/textos014.json", "frames": 900, "fps": 30, "out": "014_vegaviana", "run": 1}
