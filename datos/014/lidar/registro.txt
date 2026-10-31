@@ -1,0 +1,7 @@
+LIDA3 catálogo 200 229151 cookies ['JSESSIONID']
+LIDA3 archivosSerie 403 555
+LIDA3 secuenciales [] nombres []
+LIDA2 catálogo 200 238130 cookies ['JSESSIONID']
+LIDA2 archivosSerie 403 555
+LIDA2 secuenciales [] nombres []
+sin archivos
