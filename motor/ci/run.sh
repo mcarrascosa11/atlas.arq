@@ -10,6 +10,12 @@ if python3 -c "import json,sys; sys.exit(0 if 'fetch' in json.load(open('$J')) e
   git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
   git add "$D"; git commit -m "datos: descarga para $D"; git pull --rebase -q && git push; exit 0
 fi
+if python3 -c "import json,sys; sys.exit(0 if 'prep' in json.load(open('$J')) else 1)"; then   # modo preparación de datos: script de Python que deja sus resultados en una carpeta del repo
+  P=$(v prep); D=$(v dir); pip install -q requests numpy pyproj "laspy[lazrs]"
+  python3 "$P" || true
+  git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+  git add "$D"; git commit -m "datos: $P" || true; git pull --rebase -q && git push; exit 0
+fi
 if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('engine') == 'blender' else 1)"; then   # modo Blender: escena en motor/blender
   OUT=$(v out); DATA=$(v data); MUSIC=$(v music); SCENE=$(v scene); TEXTS=$(v texts); FR=$(v frames)
   echo "== $OUT (Blender: $SCENE)"
