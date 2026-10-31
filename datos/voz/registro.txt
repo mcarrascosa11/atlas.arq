@@ -1,0 +1,10 @@
+{'language': 'es', 'locale': 'es-ES'} página 0: 200
+{'language': 'es', 'locale': 'es-ES'} página 1: 200
+{'language': 'es', 'locale': 'es-ES'} página 2: 200
+{'language': 'es', 'accent': 'peninsular'} página 0: 200
+{'language': 'es', 'accent': 'peninsular'} página 1: 200
+{'language': 'es', 'accent': 'peninsular'} página 2: 200
+{'language': 'es', 'accent': 'castilian'} página 0: 200
+{'language': 'es', 'search': 'españa'} página 0: 200
+{'language': 'es', 'search': 'spain'} página 0: 200
+voces de España: 330
