@@ -1,1 +1,1 @@
-{"prep": "motor/voz/lydia_var014.py", "dir": "videos/pruebas014/lydia", "run": "lydiavar1"}
+{"engine": "blender", "scene": "motor/blender/sarnago_video.py", "data": "motor/ci/datosSar.sh", "texts": "motor/blender/textos015.json", "post": "motor/blender/post015.py", "music": "motor/blender/music015.py", "frames": 1080, "fps": 30, "out": "015_sarnago", "run": 3}
