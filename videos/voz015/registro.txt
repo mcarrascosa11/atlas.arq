@@ -1,0 +1,15 @@
+historial 200
+audio 200 801446 Lydia - Warm, Energetic and Confident
+frases 11 esperadas 11
+  frase 1: 2.59 s -> entra 0.08, tempo 1.00, acaba 2.67
+  frase 2: 4.56 s -> entra 3.08, tempo 1.20, acaba 6.88
+  frase 3: 2.64 s -> entra 6.98, tempo 1.00, acaba 9.62
+  frase 4: 3.20 s -> entra 10.08, tempo 1.00, acaba 13.28
+  frase 5: 3.18 s -> entra 13.38, tempo 1.00, acaba 16.57
+  frase 6: 4.09 s -> entra 16.67, tempo 1.11, acaba 20.35
+  frase 7: 2.34 s -> entra 20.45, tempo 1.00, acaba 22.79
+  frase 8: 2.65 s -> entra 23.08, tempo 1.00, acaba 25.73
+  frase 9: 3.50 s -> entra 26.08, tempo 1.00, acaba 29.58
+  frase 10: 3.23 s -> entra 30.08, tempo 1.07, acaba 33.09
+  frase 11: 3.31 s -> entra 33.19, tempo 1.20, acaba 35.95
+ok 015_sarnago_voz.mp4
