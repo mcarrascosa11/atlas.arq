@@ -21,10 +21,15 @@ for s0, e0 in zip(st, en):
 if tot - p > 0.3: seg.append((p - 0.03, tot))
 BEATS = [0, 3.0, 6.5, 10.0, 13.0, 16.5, 20.0, 23.0, 26.0, 30.0, 33.0, 36.0]; log('frases', len(seg), 'esperadas', len(BEATS) - 1)
 if len(seg) != len(BEATS) - 1: raise SystemExit(0)
-SR = 44100; DUR = 36.0; plan, prev = [], 0.0
+SR = 44100; DUR = 36.0; D = [s1 - s0 for s0, s1 in seg]
+# reparto en dos pasadas: hacia atrás, hasta dónde puede llegar cada frase para que quepan las siguientes y la última acabe dentro del vídeo;
+# hacia delante, cada frase entra con su título (o al acabar la anterior) y se acelera lo justo, como mucho un 20 %
+late, nxt = [0.0] * len(D), DUR + 0.1
+for i in reversed(range(len(D))): late[i] = min(DUR - 0.05 if i == len(D) - 1 else BEATS[i + 1] + 0.35, nxt - 0.1); nxt = late[i] - D[i] / 1.2
+plan, prev = [], -1.0
 for i, (s0, s1) in enumerate(seg):
-    d = s1 - s0; t0 = max(BEATS[i] + 0.1, prev + 0.12); lim = (DUR - 0.05 if i == len(seg) - 1 else BEATS[i + 1] + 0.35) - t0
-    tempo = min(1.15, max(1.0, d / lim)); plan.append([s0, s1, t0, tempo]); prev = t0 + d / tempo; log(f'  frase {i + 1}: {d:.2f} s -> entra {t0:.2f}, tempo {tempo:.2f}, acaba {prev:.2f}')
+    t0 = max(BEATS[i] + 0.08, prev + 0.1); tempo = min(1.2, max(1.0, D[i] / max(0.1, late[i] - t0))); prev = t0 + D[i] / tempo
+    plan.append([s0, s1, t0, tempo]); log(f'  frase {i + 1}: {D[i]:.2f} s -> entra {t0:.2f}, tempo {tempo:.2f}, acaba {prev:.2f}')
 voz = np.zeros(int(SR * (DUR + 1)), np.float32); spans = []
 for k, (s0, s1, t0, tempo) in enumerate(plan):
     sh('ffmpeg', '-y', '-v', 'error', '-ss', f'{s0:.3f}', '-to', f'{s1:.3f}', '-i', F, '-af', f'atempo={tempo:.3f},afade=t=in:d=0.02,areverse,afade=t=in:d=0.04,areverse', '-ar', str(SR), '-ac', '1', f'/tmp/s{k}.wav')
