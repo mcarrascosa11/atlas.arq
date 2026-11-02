@@ -23,10 +23,25 @@ if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('engine'
   curl -sL -o /tmp/b.tar.xz https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz && tar xJf /tmp/b.tar.xz -C /tmp
   pip install -q numpy scipy shapely pyproj trimesh manifold3d pillow fonttools brotli
   echo "== datos"; bash "$DATA"
+  BL=/tmp/blender-4.2.3-linux-x64/blender
+  PV=$(python3 -c "import json; print(','.join(map(str, json.load(open('$J')).get('preview', []))))")
+  if [ -n "$PV" ]; then   # prueba rápida: unos fotogramas a media resolución, que se suben al repo antes del render completo
+    echo "== prueba rápida (fotogramas $PV al 50 %)"; mkdir -p /tmp/fp "videos/prueba/$OUT"
+    $BL -b -noaudio -P "$SCENE" -- /tmp/escena.json /tmp/fp "$PV" 0 50 2>&1 | grep --line-buffered -E "fotograma|Error|Traceback" || true
+    for f in /tmp/fp/*.png; do python3 -c "import sys; from PIL import Image; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], quality=85)" "$f" "videos/prueba/$OUT/$(basename "${f%.png}").jpg"; done
+    git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+    git add "videos/prueba/$OUT"; git commit -m "$OUT: prueba rápida antes del render completo" || true; git pull --rebase -q && git push || true
+  fi
   echo "== fotogramas (Blender, $(nproc) núcleos)"; mkdir -p /tmp/fb
-  /tmp/blender-4.2.3-linux-x64/blender -b -noaudio -P "$SCENE" -- /tmp/escena.json /tmp/fb 0 $((FR - 1)) 2>&1 | grep -E "Saved|Error|Traceback" | tail -n 5 || true
+  $BL -b -noaudio -P "$SCENE" -- /tmp/escena.json /tmp/fb 0 $((FR - 1)) 2>&1 | grep --line-buffered -E "fotograma|Error|Traceback" || true   # avance cada 30 fotogramas
   POST=$(python3 -c "import json; print(json.load(open('$J')).get('post', 'motor/blender/post.py'))")   # posprocesado propio del vídeo si lo tiene
   echo "== textos y portada ($POST)"; python "$POST" /tmp/fb "$TEXTS" "portadas/$OUT.jpg" motor/web/fonts
+  if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('mgaudio') else 1)"; then   # música con instrumentos grabados: kit mgaudio (MIT, muestras CC0), versión fija
+    echo "== kit de audio"; mkdir -p /tmp/mgrepo && (cd /tmp/mgrepo && git init -q && git remote add origin https://github.com/Vincentwei1021/mg-styles-15.git \
+      && git sparse-checkout set --no-cone /lib/audio /LICENSE && git fetch -q --depth 1 --filter=blob:none origin 49052d80bfaf9fa8412cc9710530e5e95a3b8d8c && git checkout -q FETCH_HEAD)
+    pip install -q numba==0.66.0 pedalboard==0.9.25 pyloudnorm==0.2.0 soundfile
+  fi
+  export MUSIC_DUR=$(python3 -c "print($FR / 30)")
   echo "== música y montaje"; bash motor/ci/enc_ci.sh "$MUSIC" "$OUT"
   git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
   git add "videos/$OUT.mp4" "portadas/$OUT.jpg" motor/ci/ok.txt; git commit -m "$OUT: vídeo y portada renderizados con Blender en GitHub Actions"; git pull --rebase -q && git push; echo "== listo"; exit 0
