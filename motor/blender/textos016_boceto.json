@@ -1,0 +1,8 @@
+{"fps": 30, "paso": 0.16, "linea_y": 1560,
+ "textos": [[0, 3.0, "016 · SAN CATALDO · MÓDENA", "En 1971, Aldo Rossi tuvo un accidente de coche."],
+  [3.0, 6.1, "016 · 1971 · SLAVONSKI BROD", "Postrado en un hospital, imaginó un cementerio."]],
+ "rojas": ["accidente", "cementerio"],
+ "rango": [1971, 2026],
+ "hitos": [1971, 1997, 2026],
+ "linea": [[0, 1971], [6.1, 1971]],
+ "portada": {"fotograma": 0, "n": "016", "t": "¿un cementerio nacido de un accidente?", "m": ["san cataldo · aldo rossi", "módena, IT · 1971", "escala L"]}}
