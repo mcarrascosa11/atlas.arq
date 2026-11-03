@@ -37,6 +37,9 @@ if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('engine'
   fi
   echo "== fotogramas (Blender, $(nproc) núcleos)"; mkdir -p /tmp/fb
   $BL -b -noaudio -P "$SCENE" -- /tmp/escena.json /tmp/fb 0 $((FR - 1)) 2>&1 | grep --line-buffered -E "fotograma|Error|Traceback" || true   # avance cada 30 fotogramas
+  if python3 -c "import json,sys; sys.exit(0 if 'voz' in json.load(open('$J')) else 1)"; then   # voz de Lydia desde el historial de ElevenLabs
+    echo "== voz"; pip install -q requests; python3 motor/voz/voz_render.py "$J" "$TEXTS" "$(python3 -c "print($FR / 30)")"
+  fi
   POST=$(python3 -c "import json; print(json.load(open('$J')).get('post', 'motor/blender/post.py'))")   # posprocesado propio del vídeo si lo tiene
   echo "== textos y portada ($POST)"; python "$POST" /tmp/fb "$TEXTS" "portadas/$OUT.jpg" motor/web/fonts
   if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('mgaudio') else 1)"; then   # música con instrumentos grabados: kit mgaudio (MIT, muestras CC0), versión fija
@@ -47,7 +50,7 @@ if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('engine'
   export MUSIC_DUR=$(python3 -c "print($FR / 30)")
   echo "== música y montaje"; bash motor/ci/enc_ci.sh "$MUSIC" "$OUT"
   git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-  git add "videos/$OUT.mp4" "portadas/$OUT.jpg" motor/ci/ok.txt; git commit -m "$OUT: vídeo y portada renderizados con Blender en GitHub Actions"; git pull --rebase -q && git push; echo "== listo"; exit 0
+  git add "videos/$OUT.mp4" "portadas/$OUT.jpg" motor/ci/ok.txt; [ -f motor/ci/voz_ok.txt ] && git add motor/ci/voz_ok.txt; git commit -m "$OUT: vídeo y portada renderizados con Blender en GitHub Actions"; git pull --rebase -q && git push; echo "== listo"; exit 0
 fi
 PAGE=$(v page); OUT=$(v out); DATA=$(v data); MUSIC=$(v music)
 echo "== $OUT ($PAGE)"
