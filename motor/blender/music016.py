@@ -1,8 +1,8 @@
-# 016 · San Cataldo · música con instrumentos grabados (piano, vibráfono, marimba, timbal) y efectos de dibujo. uso: music016.py SALIDA.wav
+# 016 · San Cataldo · música con instrumentos grabados (piano, vibráfono, marimba, timbal), sin efectos de sonido. uso: music016.py SALIDA.wav
 # Duración: variable MUSIC_DUR (por defecto 36 s; el boceto usa menos). Escenas en BEATS; armonía en la menor sin resolver al final.
 import os, sys; sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'audio'))
 from mg import mg
-from mgaudio import samples, synth, sfx
+from mgaudio import samples, synth
 OUTW = sys.argv[1]; DUR = float(os.environ.get('MUSIC_DUR', '36')); BPM = 72.0; B = 60 / BPM
 m = mg.Mix(DUR, bpm=BPM, anchor=0.0); m.group('music').level = -20
 CH = [(0.0, ['A2', 'E3', 'A3', 'C4', 'E4']), (6.5, ['F2', 'C3', 'A3', 'C4', 'F4']), (13.0, ['C3', 'G3', 'C4', 'E4', 'G4']),
@@ -28,10 +28,4 @@ if DUR > 30:
     tp = m.track('timpani', level=-24, sends={'hall': -10})                 # redoble en «sigue sin terminar» y golpe en 1997
     for k in range(16): tp.add(samples.hit('timpani', vel=0.16 + 0.02 * k), 26.2 + k * (3.6 / 16))
     tp.add(samples.hit('timpani', vel=0.8), 30.0)
-m.sfx(sfx.impact('soft', size=0.8, seed=4), at=0.05, gain=-6, verb=-12)     # el accidente
-m.sfx(sfx.pen('pencil', dur=2.4, seed=1), at=0.15, gain=-8)                 # lápiz mientras se trazan las líneas
-for t, s in [(10.15, 2), (13.2, 3)]:
-    if t < DUR: m.sfx(sfx.pen('pencil', dur=2.6, seed=s) if t < 13 else sfx.stamp('rubber', seed=s), at=t, gain=-9 if t < 13 else -7, verb=-14)
-for t in (3.0, 6.5, 20.0, 26.0):
-    if t < DUR - 0.3: m.sfx(sfx.paper('flip', 0.5, seed=int(t)), at=t, gain=-12)   # pase de página al cambiar de plano
 res = m.export(OUTW, lufs=-14, tp=-1); print('música', {k: res[k] for k in ('duration', 'lufs', 'true_peak')})
