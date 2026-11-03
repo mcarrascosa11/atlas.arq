@@ -100,14 +100,42 @@ for k, boxes in enumerate(HU): restar(cubo, cajas(f'huecos{k}', boxes, paper))
 ZN = 2.3                                          # el columbario arranca por encima de las puertas: por abajo se sigue pasando al patio
 nichos = cajas('nichos', [(cx0 + A0, cy0 + A0, ZN, cx0 + S - A0, cy0 + A1, H), (cx0 + A0, cy0 + S - A1, ZN, cx0 + S - A0, cy0 + S - A0, H),
                           (cx0 + A0, cy0 + A1, ZN, cx0 + A1, cy0 + S - A1, H), (cx0 + S - A1, cy0 + A1, ZN, cx0 + S - A0, cy0 + S - A1, H)], redc)   # columbario: tapa los huecos por detrás
+OBJP = 'datos/sancataldo/maqueta_cementerio_aldo_rossi_2014.obj'; SMQ = 1.262             # maqueta de SketchUp de Marcos, a escala real (el cono sale con sus 25 m)
+MAQ = os.path.exists(OBJP)
+if MAQ:
+    antes = set(bpy.data.objects); bpy.ops.wm.obj_import(filepath=OBJP, forward_axis='NEGATIVE_Z', up_axis='Y')
+    nuevos = [o for o in bpy.data.objects if o not in antes and o.type == 'MESH']; bm = bmesh.new()
+    for o in nuevos:                              # todo en una malla, sin personas, cristales, césped ni zócalo
+        me_ = o.data; me_.transform(o.matrix_world); mats = [m.name if m else '' for m in me_.materials]
+        b2 = bmesh.new(); b2.from_mesh(me_)
+        malas = [f for f in b2.faces if f.material_index < len(mats) and any(k in mats[f.material_index] for k in ('Chris', 'Grass', 'Charcoal', 'Translucent'))]
+        bmesh.ops.delete(b2, geom=malas, context='FACES'); tmp = bpy.data.meshes.new('tmp'); b2.to_mesh(tmp); b2.free(); bm.from_mesh(tmp); bpy.data.meshes.remove(tmp)
+        bpy.data.objects.remove(o, do_unlink=True)
+    for v in bm.verts: v.co = ((v.co.x - 1075.83) * SMQ, (v.co.y - 450.68) * SMQ, v.co.z * SMQ)   # mismo marco que el esquema: recinto de 0 a 277 x 0 a 183 m
+    fuera, costi = [], []
+    for f in bm.faces:
+        c = f.calc_center_median(); zs = [v.co.z for v in f.verts]
+        en_cubo = 127.5 < c.x < 150.5 and 18.5 < c.y < 40.5                      # el cubo de la maqueta se sustituye por el nuestro, macizo
+        en_cono = 129.0 < c.x < 148.0 and 129.5 < c.y < 149.0 and max(zs) > 0.3   # el cono se dibuja aparte, en discontinua
+        suelo = max(zs) < 0.05 or min(zs) < -0.5                                  # terreno y zócalo: el suelo es el nuestro
+        if en_cubo or en_cono or suelo: fuera.append(f)
+        elif 102.0 < c.x < 175.0 and 63.0 < c.y < 129.0: costi.append(f)          # el triángulo de costillas: proyecto, sin construir en su mayor parte
+    bmesh.ops.delete(bm, geom=fuera, context='FACES')
+    bm2 = bm.copy(); quitar = [f for f in bm2.faces if not (102.0 < f.calc_center_median().x < 175.0 and 63.0 < f.calc_center_median().y < 129.0)]
+    bmesh.ops.delete(bm2, geom=quitar, context='FACES'); bmesh.ops.delete(bm, geom=costi, context='FACES')
+    meC = bpy.data.meshes.new('maqueta'); bm.to_mesh(meC); bm.free(); MQ = bpy.data.objects.new('maqueta', meC); link(MQ, None); MQ.data.materials.clear(); MQ.data.materials.append(paper)
+    meR = bpy.data.meshes.new('costillas'); bm2.to_mesh(meR); bm2.free(); espina = bpy.data.objects.new('costillas', meR); link(espina, pro); espina.data.materials.clear(); espina.data.materials.append(paper)
+    for o_ in GAL: bpy.data.objects.remove(o_, do_unlink=True)
+    GAL = [MQ]; print('maqueta', len(meC.polygons), 'caras construidas', len(meR.polygons), 'de costillas', flush=True)
 # U central (construida): barra de 5,8 m al norte del cubo, abierta en el eje, y dos brazos hacia el norte; 5 m de alto
-U = cajas('u_central', [(50.6, 54.1, 0, 132.0, 59.9, 5.0), (141.0, 54.1, 0, 223.9, 59.9, 5.0), (50.6, 59.9, 0, 54.9, 126.7, 5.0), (218.1, 59.9, 0, 223.9, 126.7, 5.0)], paper)
+if not MAQ: U = cajas('u_central', [(50.6, 54.1, 0, 132.0, 59.9, 5.0), (141.0, 54.1, 0, 223.9, 59.9, 5.0), (50.6, 59.9, 0, 54.9, 126.7, 5.0), (218.1, 59.9, 0, 223.9, 126.7, 5.0)], paper)
 # costillas (sin construir): 15 piezas de 2,2 m en triángulo, más cortas y más altas hacia el cono (4,5 a 11,5 m), partidas por el paso central
 RIB = []
-for k in range(15):
+for k in (range(0) if MAQ else range(15)):
     y = 59.3 + k * (125.5 - 59.3) / 14; f = k / 14; xl, xr = 101.6 + f * (128.0 - 101.6), 175.4 + f * (149.0 - 175.4); h = 4.5 + 0.5 * k
     RIB += [(xl, y, 0, 137.2, y + 2.2, h), (139.8, y, 0, xr, y + 2.2, h)]
-espina = cajas('costillas', RIB, paper, pro)
+if not MAQ: espina = cajas('costillas', RIB, paper, pro)
+else: U = cajas('u_vacia', [(0, 0, -50, 0.1, 0.1, -49.9)], paper, nol)   # la U ya va dentro de la maqueta
 # cono de la fosa común (sin construir): 25 m de alto, de 16 m a 5,5 m de diámetro
 XCONO, YCONO = 138.5, 139.2
 bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, segments=48, radius1=8.0, radius2=2.75, depth=25.0, matrix=Matrix.Translation((XCONO, YCONO, 12.5)))
@@ -146,19 +174,19 @@ def cam_(tg, half, az, el):
     az, el = math.radians(az), math.radians(el); d = 5000; cam_data.ortho_scale = 2 * half
     cam.location = (tg[0] + math.sin(az) * math.cos(el) * d, tg[1] + math.cos(az) * math.cos(el) * d, tg[2] + math.sin(el) * d); tgt.location = tg
 ss = lambda x: 0.0 if x <= 0 else 1.0 if x >= 1 else x * x * (3 - 2 * x)
-CU = (XCUBO, YC, H * 0.55); CO = (XCONO, YCONO, 13.0); EJE = (XE, 80.0, 0.0); FS = (XCUBO, cy0, 8.5)
+CU = (XCUBO, YC, H * 0.55); CO = (XCONO, YCONO, 13.0); EJE = (XE, 80.0, 0.0); FS = (XCUBO, cy0, 8.5); TODO = (LX / 2, LY / 2, 0.0)
 # una toma por escena (de, a, cámara inicial, cámara final); entre escenas hay corte. Cámara: (objetivo, semialtura, azimut, elevación); azimut 180 = desde el sur
-SCN = [(0.0, 3.0, (CU, 24, 205, 24), (CU, 21, 222, 26)),                 # el cubo, desde el primer fotograma
-       (3.0, 6.5, (CU, 23, 222, 30), (CU, 30, 232, 34)),                 # el cubo imaginado: solo trazo
-       (6.5, 10.0, ((377.0, 91.5, 0.0), 395, 270, 80), ((377.0, 91.5, 0.0), 380, 270, 82)),   # planta: Costa arriba (al este) y el solar del concurso abajo
-       (10.0, 13.0, ((XCUBO, 34.0, 6.0), 62, 35, 26), ((XCUBO, 34.0, 6.0), 56, 42, 24)),       # se levantan las galerías, con el cubo delante
-       (13.0, 16.5, (CU, 21, 205, 62), (CU, 19, 212, 66)),               # el cubo desde arriba: sin techo ni suelos, los nichos hacia el patio
+SCN = [(0.0, 3.0, ((LX / 2 + 10, LY / 2, 0.0), 168, 270, 40), ((LX / 2 + 10, LY / 2, 0.0), 158, 278, 42)),   # el cementerio entero desde el oeste, con el cubo en bermellón
+       (3.0, 6.5, ((LX / 2 + 10, LY / 2, 0.0), 160, 278, 44), ((LX / 2 + 10, LY / 2, 0.0), 150, 286, 46)),   # el conjunto «imaginado»: solo trazo
+       (6.5, 10.0, ((377.0, 91.5, 0.0), 395, 270, 80), ((377.0, 91.5, 0.0), 380, 270, 82)),               # planta: Costa arriba (al este) y el solar del concurso abajo
+       (10.0, 13.0, (TODO, 175, 222, 30), (TODO, 160, 230, 32)),          # se levantan las galerías alrededor del patio
+       (13.0, 16.5, (CU, 26, 205, 60), (CU, 23, 212, 64)),               # el cubo desde arriba, con el patio alrededor
        (16.5, 20.0, (FS, 15, 180, 2), (FS, 14, 180, 2)),                 # la fachada sur de frente: puertas y ventanas sin carpintería
-       (20.0, 23.0, (CO, 26, 192, 16), (CO, 24, 184, 14)),               # el cono, en discontinua, con la galería norte detrás
+       (20.0, 23.0, ((XE, 88.0, 6.0), 64, 180, 18), ((XE, 92.0, 6.0), 58, 180, 20)),   # por el eje: el cubo delante, las costillas y al fondo el cono
        (23.0, 26.0, ((XCONO, YCONO, 18.0), 18, 186, 3), ((XCONO, YCONO, 18.0), 16, 180, 4)),   # el cono como una chimenea
-       (26.0, 30.0, (EJE, 160, 186, 46), (EJE, 150, 180, 44)),           # todo el eje: cubo, U, costillas y cono
-       (30.0, 33.0, (CU, 26, 40, 22), (CU, 24, 48, 24)),                 # vuelta al cubo, desde el norte
-       (33.0, 36.2, (CO, 32, 190, 12), (CO, 44, 200, 16))]               # el cono sigue esperando
+       (26.0, 30.0, ((LX / 2 - 10, LY / 2, 0.0), 168, 90, 44), ((LX / 2 - 10, LY / 2, 0.0), 158, 82, 46)),   # el conjunto desde el este: lo construido y lo que falta
+       (30.0, 33.0, (CU, 40, 40, 22), (CU, 36, 48, 24)),                 # vuelta al cubo, con el patio detrás
+       (33.0, 36.2, (CO, 30, 190, 14), ((LX / 2, LY / 2 + 10, 0.0), 168, 200, 40))]   # del cono al cementerio entero: sigue esperando
 def camara(t):
     for a, b, A, Bv in SCN:
         if a <= t < b:
@@ -166,16 +194,16 @@ def camara(t):
             return (tuple(lerp(p, q) for p, q in zip(A[0], Bv[0])), math.exp(lerp(math.log(A[1]), math.log(Bv[1]))), A[2] + da * u, lerp(A[3], Bv[3]))
     return SCN[-1][3]
 def estado(t):
-    imagina = 3.0 <= t < 6.5                                       # el cubo «imaginado»: solo trazo, sin color
+    imagina = 3.0 <= t < 6.5                                       # el conjunto «imaginado»: solo trazo, sin color
     cubo.data.materials[0] = nichos.data.materials[0] = paper if imagina else redc
-    vis_galer = t >= 10.0 and not (16.5 <= t < 20.0)               # las galerías se levantan con «una ciudad de los muertos»; fuera en la fachada de frente
+    vis_galer = (t < 6.5 or t >= 10.0) and not (16.5 <= t < 20.0)  # galerías: en las vistas del conjunto y desde «una ciudad de los muertos»; fuera en la fachada de frente
     for o in GAL + [U]: o.hide_render = not vis_galer
-    kg = ss((t - 10.0) / 1.6) if 10.0 <= t < 11.6 else 1.0
+    kg = ss((t - 10.0) / 1.6) if 10.0 <= t < 11.6 else 1.0            # vuelven a levantarse en «una ciudad de los muertos»
     for o in GAL + [U]: o.scale = (1, 1, max(0.02, kg)) if vis_galer else (1, 1, 1)
     SOL.hide_render = solar_rel.hide_render = costa_patio.hide_render = not (6.5 <= t < 10.0)
-    cono.hide_render = not (t >= 20.0); espina.hide_render = not (26.0 <= t < 30.0)
-    cubo.hide_render = nichos.hide_render = (6.5 <= t < 10.0) or (20.0 <= t < 26.0) or t >= 33.0
-    for o in cost: o.hide_render = not (6.5 <= t < 13.0 or 26.0 <= t < 30.0)
+    cono.hide_render = not (t >= 20.0); espina.hide_render = not (t >= 20.0)
+    cubo.hide_render = nichos.hide_render = (6.5 <= t < 10.0) or (23.0 <= t < 26.0)   # fuera solo en la planta y en el cono como chimenea
+    for o in cost: o.hide_render = not (6.5 <= t < 10.0)            # Costa solo en la planta del concurso (desde el este taparía el recinto)
 t0 = time.time(); n = len(FRAMES)
 for k, f in enumerate(FRAMES):
     t = f / FPS; estado(t); cam_(*camara(t)); sc.render.filepath = f'{OUT}/{f:05d}.png'; bpy.ops.render.render(write_still=True)
