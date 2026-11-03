@@ -177,15 +177,15 @@ def cam_(tg, half, az, el):
 ss = lambda x: 0.0 if x <= 0 else 1.0 if x >= 1 else x * x * (3 - 2 * x)
 CU = (XCUBO, YC, H * 0.55); CO = (XCONO, YCONO, 13.0); EJE = (XE, 80.0, 0.0); FS = (XCUBO, cy0, 8.5); TODO = (LX / 2, LY / 2, 0.0)
 # una toma por escena (de, a, cámara inicial, cámara final); entre escenas hay corte. Cámara: (objetivo, semialtura, azimut, elevación); azimut 180 = desde el sur
-SCN = [(0.0, 3.0, ((LX / 2 + 10, LY / 2, 0.0), 168, 270, 40), ((LX / 2 + 10, LY / 2, 0.0), 158, 278, 42)),   # el cementerio entero desde el oeste, con el cubo en bermellón
-       (3.0, 6.5, ((LX / 2 + 10, LY / 2, 0.0), 160, 278, 44), ((LX / 2 + 10, LY / 2, 0.0), 150, 286, 46)),   # el conjunto «imaginado»: solo trazo
+SCN = [(0.0, 3.0, ((LX / 2 + 14, LY / 2, 0.0), 186, 270, 40), ((LX / 2 + 14, LY / 2, 0.0), 176, 278, 42)),   # el cementerio entero desde el oeste, con el cubo en bermellón
+       (3.0, 6.5, ((LX / 2 + 14, LY / 2, 0.0), 178, 278, 44), ((LX / 2 + 14, LY / 2, 0.0), 168, 286, 46)),   # el conjunto «imaginado»: solo trazo
        (6.5, 10.0, ((377.0, 91.5, 0.0), 395, 270, 80), ((377.0, 91.5, 0.0), 380, 270, 82)),               # planta: Costa arriba (al este) y el solar del concurso abajo
        (10.0, 13.0, (TODO, 175, 222, 30), (TODO, 160, 230, 32)),          # se levantan las galerías alrededor del patio
        (13.0, 16.5, (CU, 26, 205, 60), (CU, 23, 212, 64)),               # el cubo desde arriba, con el patio alrededor
        (16.5, 20.0, (FS, 15, 180, 2), (FS, 14, 180, 2)),                 # la fachada sur de frente: puertas y ventanas sin carpintería
        (20.0, 23.0, ((XE, 88.0, 6.0), 64, 180, 18), ((XE, 92.0, 6.0), 58, 180, 20)),   # por el eje: el cubo delante, las costillas y al fondo el cono
        (23.0, 26.0, ((XCONO, YCONO, 18.0), 18, 186, 3), ((XCONO, YCONO, 18.0), 16, 180, 4)),   # el cono como una chimenea
-       (26.0, 30.0, ((LX / 2 - 10, LY / 2, 0.0), 168, 90, 44), ((LX / 2 - 10, LY / 2, 0.0), 158, 82, 46)),   # el conjunto desde el este: lo construido y lo que falta
+       (26.0, 30.0, ((LX / 2 - 14, LY / 2, 0.0), 186, 90, 44), ((LX / 2 - 14, LY / 2, 0.0), 176, 82, 46)),   # el conjunto desde el este: lo construido y lo que falta
        (30.0, 33.0, (CU, 40, 40, 22), (CU, 36, 48, 24)),                 # vuelta al cubo, con el patio detrás
        (33.0, 36.2, (CO, 30, 190, 14), ((LX / 2, LY / 2 + 10, 0.0), 168, 200, 40))]   # del cono al cementerio entero: sigue esperando
 def camara(t):
