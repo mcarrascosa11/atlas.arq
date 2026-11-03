@@ -1,8 +1,8 @@
 # 016 · San Cataldo (Aldo Rossi y Gianni Braghieri, Módena, 1971-) · vídeo de 36 s en Blender: Cycles en colores planos + Freestyle, como Sarnago.
 # Lo construido va en trazo continuo; lo que nunca se hizo (el cono de la fosa común y la espina de 14 piezas) en trazo discontinuo.
-# Medidas documentadas: ventanas del cubo de 2 m en 9 columnas x 7 filas por cara; recinto de galerías de 5 m de ancho y 13 m de alto;
+# Medidas documentadas: cubo de unos 20 m de lado con muros de 3 m de grueso (dentro, los nichos del osario) y 9 x 7 huecos por cara; galerías de 5 m de ancho y 13 m de alto;
 # cono de 25 m de alto y de 16 a 5,5 m de diámetro; espina de 14 piezas de 2 m de ancho entre 4,5 y 11,5 m; cementerio de Costa de 272 x 180 m.
-# Estimadas para el dibujo (se señalan en los bocetos): lado del cubo, grosor de muros y posición relativa de cubo, espina y cono en el patio.
+# Estimadas para el dibujo (se señalan en los bocetos): tamaño de los huecos (1 m), su reparto en altura y la posición relativa de cubo, espina y cono en el patio.
 # uso: blender -b -noaudio -P sancataldo_video.py -- ESCENA_JSON(no se usa) CARPETA F0 F1 [PORCENTAJE]   (F0 puede ser una lista: 45,142,...)
 import bpy, bmesh, math, sys, os, time
 from mathutils import Matrix
@@ -66,9 +66,26 @@ LX, LY, WG = 346.0, 188.0, 5.0; X0, Y0 = -LX - 30, 0.0                          
 GAL = [crujia('gal_s', X0, Y0, X0 + LX, Y0 + WG), crujia('gal_n', X0, Y0 + LY - WG, X0 + LX, Y0 + LY),
        crujia('gal_o', X0, Y0 + WG, X0 + WG, Y0 + LY - WG), crujia('gal_e', X0 + LX - WG, Y0 + WG, X0 + LX, Y0 + LY - WG)]
 YC = Y0 + LY / 2; XCUBO, XCONO = X0 + LX - 70, X0 + 110                               # eje central este-oeste
-S, E, W, P, H = 26.0, 0.6, 2.0, 0.8, 26.0; ZB = H - 1.6 - (7 * W + 6 * P)
+S, E, W, H = 20.0, 3.0, 1.0, 20.0; P = (S - 9 * W) / 10; ZB = 3.6                      # muro macizo de 3 m: los huecos son pequeños y profundos
 cx0, cy0 = XCUBO - S / 2, YC - S / 2
-cubo = cajas('cubo', [(cx0, cy0, 0, cx0 + S, cy0 + S, H)], red)
+def mat_cubo():                                   # bermellón con la retícula de nichos pintada solo en las caras del patio (a 7 m del centro)
+    m = mat('rojo_cubo', '#E2401C', 0.8); nt = m.node_tree; mul = [n for n in nt.nodes if n.bl_idname == 'ShaderNodeMix'][0]
+    geo = nt.nodes.new('ShaderNodeNewGeometry'); sep = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(geo.outputs['Position'], sep.inputs[0])
+    def op(o, a=None, b=None):
+        n = nt.nodes.new('ShaderNodeMath'); n.operation = o
+        for k, v in enumerate((a, b)):
+            if v is None: continue
+            if isinstance(v, (int, float)): n.inputs[k].default_value = v
+            else: nt.links.new(v, n.inputs[k])
+        return n.outputs[0]
+    dx, dy = op('ABSOLUTE', op('SUBTRACT', sep.outputs['X'], XCUBO)), op('ABSOLUTE', op('SUBTRACT', sep.outputs['Y'], YC)); d = op('MAXIMUM', dx, dy)
+    patio = op('MULTIPLY', op('GREATER_THAN', d, S / 2 - E - 0.05), op('LESS_THAN', d, S / 2 - E + 0.05))
+    u = op('ADD', sep.outputs['X'], sep.outputs['Y']); cu = op('LESS_THAN', op('FRACT', op('DIVIDE', u, 0.75)), 0.72); cz = op('LESS_THAN', op('FRACT', op('DIVIDE', sep.outputs['Z'], 0.75)), 0.72)
+    fac = op('MULTIPLY', op('MULTIPLY', patio, op('MULTIPLY', cu, cz)), op('GREATER_THAN', sep.outputs['Z'], 0.6))
+    mx = nt.nodes.new('ShaderNodeMix'); mx.data_type = 'RGBA'; mx.inputs[6].default_value = lin('#E2401C'); mx.inputs[7].default_value = lin('#B8340F')
+    nt.links.new(fac, mx.inputs['Factor']); nt.links.new(mx.outputs[2], mul.inputs[6]); return m
+redc = mat_cubo()
+cubo = cajas('cubo', [(cx0, cy0, 0, cx0 + S, cy0 + S, H)], redc)
 restar(cubo, cajas('vacio', [(cx0 + E, cy0 + E, -1, cx0 + S - E, cy0 + S - E, H + 1)], paper))
 HU = []
 for c in range(9):
@@ -121,16 +138,16 @@ def cam_(tg, half, az, el):
 ss = lambda x: 0.0 if x <= 0 else 1.0 if x >= 1 else x * x * (3 - 2 * x)
 CU = (XCUBO, YC, H * 0.55); CO = (XCONO, YC, 13.0); MIDE = (X0 + LX / 2, YC, 0.0); TODO = ((X0 + CX0 + CL) / 2, (Y0 + LY) / 2, 0.0); FR_ = (XCUBO, cy0, 14.0)
 # una toma por escena (de, a, cámara inicial, cámara final); entre escenas hay corte. Cámara: (objetivo, semialtura, azimut, elevación)
-SCN = [(0.0, 3.0, (CU, 36, 205, 24), (CU, 32, 222, 26)),                 # el cubo, desde el primer fotograma
-       (3.0, 6.5, (CU, 34, 222, 30), (CU, 46, 232, 34)),                 # el cubo imaginado: solo trazo
-       (6.5, 10.0, (TODO, 330, 270, 58), (TODO, 300, 270, 56)),          # el cementerio de Costa y el solar del concurso
+SCN = [(0.0, 3.0, (CU, 27, 205, 24), (CU, 24, 222, 26)),                 # el cubo, desde el primer fotograma
+       (3.0, 6.5, (CU, 26, 222, 30), (CU, 34, 232, 34)),                 # el cubo imaginado: solo trazo
+       (6.5, 10.0, ((-20.0, 92.0, 0.0), 150, 238, 42), ((-20.0, 92.0, 0.0), 135, 242, 40)),   # el cementerio de Costa y, al lado, el solar del concurso
        (10.0, 13.0, (MIDE, 175, 262, 40), (MIDE, 165, 268, 38)),         # se levantan las galerías
-       (13.0, 16.5, (CU, 30, 200, 62), (CU, 27, 210, 66)),               # el cubo desde arriba: sin techo ni suelos
-       (16.5, 20.0, (FR_, 17, 180, 6), (FR_, 15, 186, 8)),               # la fachada: ventanas sin carpintería
+       (13.0, 16.5, (CU, 24, 205, 62), (CU, 22, 212, 66)),               # el cubo desde arriba: sin techo ni suelos, los nichos hacia el patio
+       (16.5, 20.0, ((XCUBO, cy0, 10.0), 14, 180, 2), ((XCUBO, cy0, 10.0), 13, 180, 2)),   # la fachada de frente: huecos sin carpintería
        (20.0, 23.0, (CO, 26, 160, 16), (CO, 24, 168, 14)),               # el cono, en discontinua
        (23.0, 26.0, ((XCONO, YC, 18.0), 18, 150, 3), ((XCONO, YC, 18.0), 16, 158, 4)),   # el cono como una chimenea
        (26.0, 30.0, (MIDE, 165, 262, 46), (MIDE, 150, 270, 44)),         # todo: lo construido y lo que falta
-       (30.0, 33.0, (CU, 40, 236, 22), (CU, 36, 242, 24)),               # vuelta al cubo
+       (30.0, 33.0, (CU, 30, 236, 22), (CU, 27, 242, 24)),               # vuelta al cubo
        (33.0, 36.2, (CO, 32, 150, 12), (CO, 44, 140, 16))]               # el cono sigue esperando
 def camara(t):
     for a, b, A, Bv in SCN:
@@ -140,7 +157,7 @@ def camara(t):
     return SCN[-1][3]
 def estado(t):
     imagina = 3.0 <= t < 6.5                                       # el cubo «imaginado»: solo trazo, sin color
-    cubo.data.materials[0] = paper if imagina else red
+    cubo.data.materials[0] = paper if imagina else redc
     vis_galer = t >= 10.0 or t < 0                                 # las galerías se levantan con «una ciudad de los muertos»
     for o in GAL: o.hide_render = not vis_galer
     kg = ss((t - 10.0) / 1.6) if 10.0 <= t < 11.6 else 1.0
