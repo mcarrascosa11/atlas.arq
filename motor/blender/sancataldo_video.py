@@ -49,7 +49,7 @@ def cajas(name, boxes, m, col=None):
         bmesh.ops.create_cube(bm, size=1.0, matrix=Matrix.Translation(((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)) @ Matrix.Diagonal((x1 - x0, y1 - y0, z1 - z0, 1)))
     me = bpy.data.meshes.new(name); bm.to_mesh(me); bm.free(); ob = bpy.data.objects.new(name, me); link(ob, col); ob.data.materials.append(m); return ob
 def restar(ob, cutter):
-    md = ob.modifiers.new('resta', 'BOOLEAN'); md.operation = 'DIFFERENCE'; md.object = cutter; md.solver = 'EXACT'
+    md = ob.modifiers.new('resta', 'BOOLEAN'); md.operation = 'DIFFERENCE'; md.object = cutter; md.solver = 'EXACT'; md.use_self = True   # el cortador puede tener cajas que se tocan
     bpy.context.view_layer.objects.active = ob; ob.select_set(True); bpy.ops.object.modifier_apply(modifier=md.name); bpy.data.objects.remove(cutter, do_unlink=True)
 def prisma(name, V, F, m, col=None):
     me = bpy.data.meshes.new(name); me.from_pydata(V, [], F); me.update(); bm = bmesh.new(); bm.from_mesh(me); bmesh.ops.recalc_face_normals(bm, faces=bm.faces); bm.to_mesh(me); bm.free()
@@ -88,13 +88,13 @@ redc = mat_cubo()
 cubo = cajas('cubo', [(cx0, cy0, 0, cx0 + S, cy0 + S, H)], redc)
 restar(cubo, cajas('vacio', [(cx0 + E, cy0 + E, -1, cx0 + S - E, cy0 + S - E, H + 1)], paper))
 COLS = [0.89 + c * 1.99 for c in range(9)]; FILAS = [(0.0, 2.14)] + [(3.02 + r * 1.97, 3.02 + r * 1.97 + 1.09) for r in range(6)]   # puertas abajo y 6 filas de ventanas
-HU = []
+HU = [[], [], [], []]                              # un cortador por cara: así las cajas de dos caras no se solapan en las esquinas
 for a_ in COLS:
     for z0, z1 in FILAS:
         z0 = z0 - (1.0 if z0 == 0 else 0)
-        HU += [(cx0 + a_, cy0 - 1, z0, cx0 + a_ + 1.1, cy0 + E + 1, z1), (cx0 + a_, cy0 + S - E - 1, z0, cx0 + a_ + 1.1, cy0 + S + 1, z1),
-               (cx0 - 1, cy0 + a_, z0, cx0 + E + 1, cy0 + a_ + 1.1, z1), (cx0 + S - E - 1, cy0 + a_, z0, cx0 + S + 1, cy0 + a_ + 1.1, z1)]
-restar(cubo, cajas('huecos', HU, paper))
+        HU[0].append((cx0 + a_, cy0 - 1, z0, cx0 + a_ + 1.1, cy0 + E + 0.5, z1)); HU[1].append((cx0 + a_, cy0 + S - E - 0.5, z0, cx0 + a_ + 1.1, cy0 + S + 1, z1))
+        HU[2].append((cx0 - 1, cy0 + a_, z0, cx0 + E + 0.5, cy0 + a_ + 1.1, z1)); HU[3].append((cx0 + S - E - 0.5, cy0 + a_, z0, cx0 + S + 1, cy0 + a_ + 1.1, z1))
+for k, boxes in enumerate(HU): restar(cubo, cajas(f'huecos{k}', boxes, paper))
 # U central (construida): barra de 5,8 m al norte del cubo, abierta en el eje, y dos brazos hacia el norte; 5 m de alto
 U = cajas('u_central', [(50.6, 54.1, 0, 132.0, 59.9, 5.0), (141.0, 54.1, 0, 223.9, 59.9, 5.0), (50.6, 59.9, 0, 54.9, 126.7, 5.0), (218.1, 59.9, 0, 223.9, 126.7, 5.0)], paper)
 # costillas (sin construir): 15 piezas de 2,2 m en triángulo, más cortas y más altas hacia el cono (4,5 a 11,5 m), partidas por el paso central
