@@ -117,6 +117,8 @@ cost.append(col)
 me = bpy.data.meshes.new('suelo'); me.from_pydata([(-900, -600, 0), (700, -600, 0), (700, 800, 0), (-900, 800, 0)], [], [(0, 1, 2, 3)]); g = bpy.data.objects.new('suelo', me); nol.objects.link(g); g.data.materials.append(ground)
 # solar vacío del concurso: contorno en bermellón sobre el suelo (sin trazo)
 redl = mat('linea_roja', '#E2401C', 1.0)
+costa_patio = cajas('costa_patio', [(CX0, CY0, 0.02, CX0 + CL, CY0 + CW, 0.08)], mat('patio_costa', '#E4E0D6', 1.0), nol)
+solar_rel = cajas('solar_relleno', [(X0, Y0, 0.02, X0 + LX, Y0 + LY, 0.08)], mat('solar_claro', '#F3C1B0', 1.0), nol)
 SOL = cajas('solar', [(X0, Y0 - 0.6, 0.02, X0 + LX, Y0 + 0.6, 0.12), (X0, Y0 + LY - 0.6, 0.02, X0 + LX, Y0 + LY + 0.6, 0.12), (X0 - 0.6, Y0, 0.02, X0 + 0.6, Y0 + LY, 0.12), (X0 + LX - 0.6, Y0, 0.02, X0 + LX + 0.6, Y0 + LY, 0.12)], redl, nol)
 # --- trazo: tinta continua para lo construido; bermellón discontinuo para lo que nunca se hizo
 sc.render.use_freestyle = True; sc.render.line_thickness_mode = 'ABSOLUTE'; sc.render.line_thickness = 1.0
@@ -140,10 +142,10 @@ CU = (XCUBO, YC, H * 0.55); CO = (XCONO, YC, 13.0); MIDE = (X0 + LX / 2, YC, 0.0
 # una toma por escena (de, a, cámara inicial, cámara final); entre escenas hay corte. Cámara: (objetivo, semialtura, azimut, elevación)
 SCN = [(0.0, 3.0, (CU, 27, 205, 24), (CU, 24, 222, 26)),                 # el cubo, desde el primer fotograma
        (3.0, 6.5, (CU, 26, 222, 30), (CU, 34, 232, 34)),                 # el cubo imaginado: solo trazo
-       (6.5, 10.0, ((-20.0, 92.0, 0.0), 150, 238, 42), ((-20.0, 92.0, 0.0), 135, 242, 40)),   # el cementerio de Costa y, al lado, el solar del concurso
-       (10.0, 13.0, (MIDE, 175, 262, 40), (MIDE, 165, 268, 38)),         # se levantan las galerías
+       (6.5, 10.0, ((61.0, 94.0, 0.0), 470, 270, 80), ((61.0, 94.0, 0.0), 452, 270, 82)),   # planta: el cementerio de Costa arriba y el solar del concurso abajo
+       (10.0, 13.0, ((XCUBO - 20, Y0 + 30, 5.0), 62, 212, 28), ((XCUBO - 20, Y0 + 30, 5.0), 56, 218, 26)),   # se levantan las galerías, con el cubo detrás
        (13.0, 16.5, (CU, 24, 205, 62), (CU, 22, 212, 66)),               # el cubo desde arriba: sin techo ni suelos, los nichos hacia el patio
-       (16.5, 20.0, ((XCUBO, cy0, 10.0), 14, 180, 2), ((XCUBO, cy0, 10.0), 13, 180, 2)),   # la fachada de frente: huecos sin carpintería
+       (16.5, 20.0, ((XCUBO, cy0, 13.0), 20, 180, 2), ((XCUBO, cy0, 13.0), 19, 180, 2)),   # la fachada de frente: huecos sin carpintería (sin galerías delante)
        (20.0, 23.0, (CO, 26, 160, 16), (CO, 24, 168, 14)),               # el cono, en discontinua
        (23.0, 26.0, ((XCONO, YC, 18.0), 18, 150, 3), ((XCONO, YC, 18.0), 16, 158, 4)),   # el cono como una chimenea
        (26.0, 30.0, (MIDE, 165, 262, 46), (MIDE, 150, 270, 44)),         # todo: lo construido y lo que falta
@@ -158,11 +160,11 @@ def camara(t):
 def estado(t):
     imagina = 3.0 <= t < 6.5                                       # el cubo «imaginado»: solo trazo, sin color
     cubo.data.materials[0] = paper if imagina else redc
-    vis_galer = t >= 10.0 or t < 0                                 # las galerías se levantan con «una ciudad de los muertos»
+    vis_galer = t >= 10.0 and not (16.5 <= t < 20.0)               # las galerías se levantan con «una ciudad de los muertos»; fuera en la fachada de frente
     for o in GAL: o.hide_render = not vis_galer
     kg = ss((t - 10.0) / 1.6) if 10.0 <= t < 11.6 else 1.0
     for o in GAL: o.scale = (1, 1, max(0.02, kg)) if vis_galer else (1, 1, 1)
-    SOL.hide_render = not (6.5 <= t < 10.4)
+    SOL.hide_render = solar_rel.hide_render = costa_patio.hide_render = not (6.5 <= t < 10.0)
     cono.hide_render = not (t >= 20.0); espina.hide_render = not (26.0 <= t < 30.0)
     cubo.hide_render = (6.5 <= t < 10.0) or (20.0 <= t < 26.0) or t >= 33.0
     for o in cost: o.hide_render = not (6.5 <= t < 13.0 or 26.0 <= t < 30.0)
