@@ -2,6 +2,7 @@
 set -euo pipefail
 MUSIC="$1"; OUT="$2"; W=/tmp/enc; mkdir -p $W
 python "$GITHUB_WORKSPACE/$MUSIC" $W/raw.wav
+if [ -f /tmp/voz/voz.wav ] && [ -f /tmp/voz/plan.json ]; then python "$GITHUB_WORKSPACE/motor/voz/mezcla.py" $W/raw.wav /tmp/voz/voz.wav /tmp/voz/plan.json $W/mix.wav && mv $W/mix.wav $W/raw.wav; fi   # voz de Lydia con la música bajando mientras habla
 I=$(ffmpeg -hide_banner -nostats -i $W/raw.wav -af ebur128 -f null - 2>&1 | grep -E "^\s+I:" | tail -1 | awk '{print $2}')
 G=$(python -c "print(round(-14-($I),2))")
 ffmpeg -hide_banner -loglevel error -y -i $W/raw.wav -af "volume=${G}dB,alimiter=limit=0.89:level=false" $W/music.wav
