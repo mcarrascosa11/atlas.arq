@@ -16,7 +16,7 @@ def fade(h, top=True, k=1.9):
     for y in range(h): g.putpixel((0, y), int(255 * min(1, max(0, ((h - y) if top else y) / h * k))))
     return g.resize((1080, h))
 TOP, BOT = fade(520), fade(420, False); os.makedirs('/tmp/frames', exist_ok=True)
-Y0, Y1 = T['rango']; X0, X1, YL = 90, 990, T.get('linea_y', 1780)   # 1560 deja la línea fuera de la zona que tapan el nombre y la descripción en Reels
+LIN = 'linea' in T; Y0, Y1 = T.get('rango', (0, 1)); X0, X1, YL = 90, 990, T.get('linea_y', 1780)   # 1560 deja la línea fuera de la zona que tapan el nombre y la descripción en Reels
 def anio(t):
     L = T['linea']
     for (ta, ya), (tb, yb) in zip(L, L[1:]):
@@ -45,13 +45,13 @@ def palabras(im, title, t, t0):
         im.alpha_composite(lay, (x, y + dy))
 files = sorted(glob.glob(f'{FR}/*.png'))
 for i, p in enumerate(files):
-    t = i / FPS; im = Image.open(p).convert('RGB'); im.paste(Image.new('RGB', (1080, 520), PAPER), (0, 0), TOP); im.paste(Image.new('RGB', (1080, 420), PAPER), (0, 1500), BOT)
+    t = i / FPS; im = Image.open(p).convert('RGB'); im.paste(Image.new('RGB', (1080, 520), PAPER), (0, 0), TOP); (im.paste(Image.new('RGB', (1080, 420), PAPER), (0, 1500), BOT) if LIN else None)
     im = im.convert('RGBA'); d = ImageDraw.Draw(im)
     cur = [x for x in T['textos'] if x[0] <= t < x[1]]
     if cur:
         t0, _, kick, title = cur[-1][:4]; ka = min(1, (t - t0) / 0.15)
         d.text((64, 150), kick, font=FK, fill=RED + (int(255 * ka),)); palabras(im, title, t, t0)
-    linea(d, anio(t)); im.convert('RGB').save(f'/tmp/frames/{i:05d}.jpg', quality=93)
+    (linea(d, anio(t)) if LIN else None); im.convert('RGB').save(f'/tmp/frames/{i:05d}.jpg', quality=93)
 P = T['portada']; im = Image.open(files[min(P['fotograma'], len(files) - 1)]).convert('RGB')
 def halo(xy, txt, font, fill):
     m = Image.new('L', im.size, 0); ImageDraw.Draw(m).text(xy, txt, font=font, fill=255)
