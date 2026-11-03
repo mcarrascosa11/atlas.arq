@@ -1,8 +1,9 @@
 # 016 · San Cataldo (Aldo Rossi y Gianni Braghieri, Módena, 1971-) · vídeo de 36 s en Blender: Cycles en colores planos + Freestyle, como Sarnago.
-# Lo construido va en trazo continuo; lo que nunca se hizo (el cono de la fosa común y la espina de 14 piezas) en trazo discontinuo.
-# Medidas documentadas: cubo de unos 20 m de lado con muros de 3 m de grueso (dentro, los nichos del osario) y 9 x 7 huecos por cara; galerías de 5 m de ancho y 13 m de alto;
-# cono de 25 m de alto y de 16 a 5,5 m de diámetro; espina de 14 piezas de 2 m de ancho entre 4,5 y 11,5 m; cementerio de Costa de 272 x 180 m.
-# Estimadas para el dibujo (se señalan en los bocetos): tamaño de los huecos (1 m), su reparto en altura y la posición relativa de cubo, espina y cono en el patio.
+# Lo construido va en trazo continuo; lo que nunca se hizo (el cono de la fosa común y las 15 costillas del triángulo) en trazo discontinuo.
+# Planta y medidas sacadas de la maqueta de SketchUp que pasó Marcos (maqueta_cementerio_aldo_rossi_2014.skp, escalada x1,26 para que el recinto mida
+# 277 x 183 m y el cono sus 25 m documentados): cubo de 18,9 x 18,9 x 14,7 m con muros de 1,07 m, 9 columnas de huecos de 1,1 m (puertas abajo y 6 filas
+# de ventanas); U central de 5 m de alto; 15 costillas de 2,2 m en triángulo hacia el cono (de 4,5 a 11,5 m de alto); cono de 16 a 5,5 m de diámetro.
+# Documentado aparte: galerías de 5 m de ancho y 13 m de alto, cementerio de Costa de 272 x 180 m al este. Sin construir: costillas y cono.
 # uso: blender -b -noaudio -P sancataldo_video.py -- ESCENA_JSON(no se usa) CARPETA F0 F1 [PORCENTAJE]   (F0 puede ser una lista: 45,142,...)
 import bpy, bmesh, math, sys, os, time
 from mathutils import Matrix
@@ -61,14 +62,13 @@ def crujia(name, x0, y0, x1, y1, he=11.0, hr=13.0, m=None):    # galería de col
         xm = (x0 + x1) / 2; V = [(x0, y0, 0), (x1, y0, 0), (x1, y1, 0), (x0, y1, 0), (x0, y0, he), (x1, y0, he), (x1, y1, he), (x0, y1, he), (xm, y0, hr), (xm, y1, hr)]
         F = [(1, 2, 6, 5), (3, 0, 4, 7), (0, 1, 5, 8, 4), (2, 3, 7, 9, 6), (5, 6, 9, 8), (7, 4, 8, 9), (0, 3, 2, 1)]
     return prisma(name, V, F, m or galer)
-# --- recinto nuevo (Rossi): rectángulo de galerías alrededor de un patio; el cubo y el cono en los extremos de la espina central
-LX, LY, WG = 346.0, 188.0, 5.0; X0, Y0 = -LX - 30, 0.0                                # recinto al oeste del de Costa, separado por un paso de servicio
+# --- recinto nuevo (Rossi): galerías alrededor del patio; en el eje sur-norte, el cubo junto a la entrada sur, la U, el triángulo de costillas y el cono
+LX, LY, WG = 277.0, 183.0, 5.0; X0, Y0 = 0.0, 0.0
 GAL = [crujia('gal_s', X0, Y0, X0 + LX, Y0 + WG), crujia('gal_n', X0, Y0 + LY - WG, X0 + LX, Y0 + LY),
        crujia('gal_o', X0, Y0 + WG, X0 + WG, Y0 + LY - WG), crujia('gal_e', X0 + LX - WG, Y0 + WG, X0 + LX, Y0 + LY - WG)]
-YC = Y0 + LY / 2; XCUBO, XCONO = X0 + LX - 70, X0 + 110                               # eje central este-oeste
-S, E, W, H = 20.0, 3.0, 1.0, 20.0; P = (S - 9 * W) / 10; ZB = 3.6                      # muro macizo de 3 m: los huecos son pequeños y profundos
-cx0, cy0 = XCUBO - S / 2, YC - S / 2
-def mat_cubo():                                   # bermellón con la retícula de nichos pintada solo en las caras del patio (a 7 m del centro)
+XE = 138.5                                                                               # eje sur-norte
+S, E, H = 18.9, 1.07, 14.73; cx0, cy0 = 129.05, 20.04; XCUBO, YC = cx0 + S / 2, cy0 + S / 2
+def mat_cubo():                                   # bermellón con la retícula de nichos pintada solo en las caras del patio
     m = mat('rojo_cubo', '#E2401C', 0.8); nt = m.node_tree; mul = [n for n in nt.nodes if n.bl_idname == 'ShaderNodeMix'][0]
     geo = nt.nodes.new('ShaderNodeNewGeometry'); sep = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(geo.outputs['Position'], sep.inputs[0])
     def op(o, a=None, b=None):
@@ -87,26 +87,29 @@ def mat_cubo():                                   # bermellón con la retícula 
 redc = mat_cubo()
 cubo = cajas('cubo', [(cx0, cy0, 0, cx0 + S, cy0 + S, H)], redc)
 restar(cubo, cajas('vacio', [(cx0 + E, cy0 + E, -1, cx0 + S - E, cy0 + S - E, H + 1)], paper))
+COLS = [0.89 + c * 1.99 for c in range(9)]; FILAS = [(0.0, 2.14)] + [(3.02 + r * 1.97, 3.02 + r * 1.97 + 1.09) for r in range(6)]   # puertas abajo y 6 filas de ventanas
 HU = []
-for c in range(9):
-    for r in range(7):
-        a, z = P + c * (W + P), ZB + r * (W + P)
-        HU += [(cx0 + a, cy0 - 1, z, cx0 + a + W, cy0 + E + 1, z + W), (cx0 + a, cy0 + S - E - 1, z, cx0 + a + W, cy0 + S + 1, z + W),
-               (cx0 - 1, cy0 + a, z, cx0 + E + 1, cy0 + a + W, z + W), (cx0 + S - E - 1, cy0 + a, z, cx0 + S + 1, cy0 + a + W, z + W)]
+for a_ in COLS:
+    for z0, z1 in FILAS:
+        z0 = z0 - (1.0 if z0 == 0 else 0)
+        HU += [(cx0 + a_, cy0 - 1, z0, cx0 + a_ + 1.1, cy0 + E + 1, z1), (cx0 + a_, cy0 + S - E - 1, z0, cx0 + a_ + 1.1, cy0 + S + 1, z1),
+               (cx0 - 1, cy0 + a_, z0, cx0 + E + 1, cy0 + a_ + 1.1, z1), (cx0 + S - E - 1, cy0 + a_, z0, cx0 + S + 1, cy0 + a_ + 1.1, z1)]
 restar(cubo, cajas('huecos', HU, paper))
-cubo_m = cubo.data.materials
-# cono de la fosa común (no construido): 25 m de alto, de 16 m a 5,5 m de diámetro
-bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, segments=48, radius1=8.0, radius2=2.75, depth=25.0, matrix=Matrix.Translation((XCONO, YC, 12.5)))
+# U central (construida): barra de 5,8 m al norte del cubo, abierta en el eje, y dos brazos hacia el norte; 5 m de alto
+U = cajas('u_central', [(50.6, 54.1, 0, 132.0, 59.9, 5.0), (141.0, 54.1, 0, 223.9, 59.9, 5.0), (50.6, 59.9, 0, 54.9, 126.7, 5.0), (218.1, 59.9, 0, 223.9, 126.7, 5.0)], paper)
+# costillas (sin construir): 15 piezas de 2,2 m en triángulo, más cortas y más altas hacia el cono (4,5 a 11,5 m), partidas por el paso central
+RIB = []
+for k in range(15):
+    y = 59.3 + k * (125.5 - 59.3) / 14; f = k / 14; xl, xr = 101.6 + f * (128.0 - 101.6), 175.4 + f * (149.0 - 175.4); h = 4.5 + 0.5 * k
+    RIB += [(xl, y, 0, 137.2, y + 2.2, h), (139.8, y, 0, xr, y + 2.2, h)]
+espina = cajas('costillas', RIB, paper, pro)
+# cono de la fosa común (sin construir): 25 m de alto, de 16 m a 5,5 m de diámetro
+XCONO, YCONO = 138.5, 139.2
+bm = bmesh.new(); bmesh.ops.create_cone(bm, cap_ends=True, segments=48, radius1=8.0, radius2=2.75, depth=25.0, matrix=Matrix.Translation((XCONO, YCONO, 12.5)))
 me = bpy.data.meshes.new('cono'); bm.to_mesh(me); bm.free(); cono = bpy.data.objects.new('cono', me); link(cono, pro); cono.data.materials.append(paper)
 for p in cono.data.polygons: p.use_smooth = True
-# espina (no construida): 14 piezas de 2 m de ancho; la altura crece hacia el cono mientras la longitud decrece (de 4,5 a 11,5 m)
-ESP = []
-for i in range(14):
-    k = i / 13; x = XCUBO - S / 2 - 14 - i * ((XCUBO - S / 2 - 14) - (XCONO + 14)) / 13; hgt = 4.5 + 7.0 * k; L = 11.5 - 7.0 * k
-    ESP.append((x - 1, YC - L / 2, 0, x + 1, YC + L / 2, hgt))
-espina = cajas('espina', ESP, paper, pro)
 # --- cementerio de Costa (1858-1876): cuadripórtico de 272 x 180 m con columnas dóricas hacia el patio
-CX0, CY0, CL, CW = 0.0, 4.0, 272.0, 180.0
+CX0, CY0, CL, CW = LX + 10.0, 1.5, 272.0, 180.0
 cost = [cajas('costa', [(CX0, CY0, 0, CX0 + CL, CY0 + 7, 9), (CX0, CY0 + CW - 7, 0, CX0 + CL, CY0 + CW, 9), (CX0, CY0 + 7, 0, CX0 + 7, CY0 + CW - 7, 9), (CX0 + CL - 7, CY0 + 7, 0, CX0 + CL, CY0 + CW - 7, 9)], paper)]
 bm = bmesh.new()
 for xs, ys, dx, dy, n in ((CX0 + 9, CY0 + 9, 4.0, 0, 64), (CX0 + 9, CY0 + CW - 9, 4.0, 0, 64), (CX0 + 9, CY0 + 13, 0, 4.0, 39), (CX0 + CL - 9, CY0 + 13, 0, 4.0, 39)):
@@ -114,7 +117,7 @@ for xs, ys, dx, dy, n in ((CX0 + 9, CY0 + 9, 4.0, 0, 64), (CX0 + 9, CY0 + CW - 9
 me = bpy.data.meshes.new('columnas'); bm.to_mesh(me); bm.free(); col = bpy.data.objects.new('columnas', me); link(col, None); col.data.materials.append(paper)
 for p in col.data.polygons: p.use_smooth = True
 cost.append(col)
-me = bpy.data.meshes.new('suelo'); me.from_pydata([(-900, -600, 0), (700, -600, 0), (700, 800, 0), (-900, 800, 0)], [], [(0, 1, 2, 3)]); g = bpy.data.objects.new('suelo', me); nol.objects.link(g); g.data.materials.append(ground)
+me = bpy.data.meshes.new('suelo'); me.from_pydata([(-500, -500, 0), (1100, -500, 0), (1100, 700, 0), (-500, 700, 0)], [], [(0, 1, 2, 3)]); g = bpy.data.objects.new('suelo', me); nol.objects.link(g); g.data.materials.append(ground)
 # solar vacío del concurso: contorno en bermellón sobre el suelo (sin trazo)
 redl = mat('linea_roja', '#E2401C', 1.0)
 costa_patio = cajas('costa_patio', [(CX0, CY0, 0.02, CX0 + CL, CY0 + CW, 0.08)], mat('patio_costa', '#E4E0D6', 1.0), nol)
@@ -138,19 +141,19 @@ def cam_(tg, half, az, el):
     az, el = math.radians(az), math.radians(el); d = 5000; cam_data.ortho_scale = 2 * half
     cam.location = (tg[0] + math.sin(az) * math.cos(el) * d, tg[1] + math.cos(az) * math.cos(el) * d, tg[2] + math.sin(el) * d); tgt.location = tg
 ss = lambda x: 0.0 if x <= 0 else 1.0 if x >= 1 else x * x * (3 - 2 * x)
-CU = (XCUBO, YC, H * 0.55); CO = (XCONO, YC, 13.0); MIDE = (X0 + LX / 2, YC, 0.0); TODO = ((X0 + CX0 + CL) / 2, (Y0 + LY) / 2, 0.0); FR_ = (XCUBO, cy0, 14.0)
-# una toma por escena (de, a, cámara inicial, cámara final); entre escenas hay corte. Cámara: (objetivo, semialtura, azimut, elevación)
-SCN = [(0.0, 3.0, (CU, 27, 205, 24), (CU, 24, 222, 26)),                 # el cubo, desde el primer fotograma
-       (3.0, 6.5, (CU, 26, 222, 30), (CU, 34, 232, 34)),                 # el cubo imaginado: solo trazo
-       (6.5, 10.0, ((61.0, 94.0, 0.0), 470, 270, 80), ((61.0, 94.0, 0.0), 452, 270, 82)),   # planta: el cementerio de Costa arriba y el solar del concurso abajo
-       (10.0, 13.0, ((XCUBO - 20, Y0 + 30, 5.0), 62, 212, 28), ((XCUBO - 20, Y0 + 30, 5.0), 56, 218, 26)),   # se levantan las galerías, con el cubo detrás
-       (13.0, 16.5, (CU, 24, 205, 62), (CU, 22, 212, 66)),               # el cubo desde arriba: sin techo ni suelos, los nichos hacia el patio
-       (16.5, 20.0, ((XCUBO, cy0, 13.0), 20, 180, 2), ((XCUBO, cy0, 13.0), 19, 180, 2)),   # la fachada de frente: huecos sin carpintería (sin galerías delante)
-       (20.0, 23.0, (CO, 26, 160, 16), (CO, 24, 168, 14)),               # el cono, en discontinua
-       (23.0, 26.0, ((XCONO, YC, 18.0), 18, 150, 3), ((XCONO, YC, 18.0), 16, 158, 4)),   # el cono como una chimenea
-       (26.0, 30.0, (MIDE, 165, 262, 46), (MIDE, 150, 270, 44)),         # todo: lo construido y lo que falta
-       (30.0, 33.0, (CU, 30, 236, 22), (CU, 27, 242, 24)),               # vuelta al cubo
-       (33.0, 36.2, (CO, 32, 150, 12), (CO, 44, 140, 16))]               # el cono sigue esperando
+CU = (XCUBO, YC, H * 0.55); CO = (XCONO, YCONO, 13.0); EJE = (XE, 80.0, 0.0); FS = (XCUBO, cy0, 8.5)
+# una toma por escena (de, a, cámara inicial, cámara final); entre escenas hay corte. Cámara: (objetivo, semialtura, azimut, elevación); azimut 180 = desde el sur
+SCN = [(0.0, 3.0, (CU, 24, 205, 24), (CU, 21, 222, 26)),                 # el cubo, desde el primer fotograma
+       (3.0, 6.5, (CU, 23, 222, 30), (CU, 30, 232, 34)),                 # el cubo imaginado: solo trazo
+       (6.5, 10.0, ((377.0, 91.5, 0.0), 395, 270, 80), ((377.0, 91.5, 0.0), 380, 270, 82)),   # planta: Costa arriba (al este) y el solar del concurso abajo
+       (10.0, 13.0, ((XCUBO, 34.0, 6.0), 62, 35, 26), ((XCUBO, 34.0, 6.0), 56, 42, 24)),       # se levantan las galerías, con el cubo delante
+       (13.0, 16.5, (CU, 21, 205, 62), (CU, 19, 212, 66)),               # el cubo desde arriba: sin techo ni suelos, los nichos hacia el patio
+       (16.5, 20.0, (FS, 15, 180, 2), (FS, 14, 180, 2)),                 # la fachada sur de frente: puertas y ventanas sin carpintería
+       (20.0, 23.0, (CO, 26, 192, 16), (CO, 24, 184, 14)),               # el cono, en discontinua, con la galería norte detrás
+       (23.0, 26.0, ((XCONO, YCONO, 18.0), 18, 186, 3), ((XCONO, YCONO, 18.0), 16, 180, 4)),   # el cono como una chimenea
+       (26.0, 30.0, (EJE, 160, 186, 46), (EJE, 150, 180, 44)),           # todo el eje: cubo, U, costillas y cono
+       (30.0, 33.0, (CU, 26, 40, 22), (CU, 24, 48, 24)),                 # vuelta al cubo, desde el norte
+       (33.0, 36.2, (CO, 32, 190, 12), (CO, 44, 200, 16))]               # el cono sigue esperando
 def camara(t):
     for a, b, A, Bv in SCN:
         if a <= t < b:
@@ -161,9 +164,9 @@ def estado(t):
     imagina = 3.0 <= t < 6.5                                       # el cubo «imaginado»: solo trazo, sin color
     cubo.data.materials[0] = paper if imagina else redc
     vis_galer = t >= 10.0 and not (16.5 <= t < 20.0)               # las galerías se levantan con «una ciudad de los muertos»; fuera en la fachada de frente
-    for o in GAL: o.hide_render = not vis_galer
+    for o in GAL + [U]: o.hide_render = not vis_galer
     kg = ss((t - 10.0) / 1.6) if 10.0 <= t < 11.6 else 1.0
-    for o in GAL: o.scale = (1, 1, max(0.02, kg)) if vis_galer else (1, 1, 1)
+    for o in GAL + [U]: o.scale = (1, 1, max(0.02, kg)) if vis_galer else (1, 1, 1)
     SOL.hide_render = solar_rel.hide_render = costa_patio.hide_render = not (6.5 <= t < 10.0)
     cono.hide_render = not (t >= 20.0); espina.hide_render = not (26.0 <= t < 30.0)
     cubo.hide_render = (6.5 <= t < 10.0) or (20.0 <= t < 26.0) or t >= 33.0
