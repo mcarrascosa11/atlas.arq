@@ -11,6 +11,7 @@ INK, RED, PAPER, GREY = (26, 27, 32), (226, 64, 28), (242, 241, 236), (156, 153,
 FT, FK = F('sg700', 74), F('sm400', 27)
 PAS, ANIM, SUBE = T.get('paso', 0.16), 0.22, 26          # segundos entre palabras, duración de la entrada y desplazamiento en píxeles
 ROJAS = {w.lower() for w in T.get('rojas', [])}          # palabras clave que entran en bermellón
+PLAN = json.load(open('/tmp/voz/plan.json')) if os.path.exists('/tmp/voz/plan.json') else None   # dónde dice Lydia cada frase
 def fade(h, top=True, k=1.9):
     g = Image.new('L', (1, h))
     for y in range(h): g.putpixel((0, y), int(255 * min(1, max(0, ((h - y) if top else y) / h * k))))
@@ -36,9 +37,9 @@ def maqueta(title, width=900):                          # posición de cada pala
         pos.append((w, 62 + int(x), 196 + k * 77)); x += lw + SP
     return pos
 CACHE = {}
-def palabras(im, title, t, t0):
+def palabras(im, title, t, start, paso):
     for i, (w, x, y) in enumerate(CACHE.setdefault(title, maqueta(title))):
-        a = (t - (t0 + 0.08 + i * PAS)) / ANIM
+        a = (t - (start + i * paso)) / ANIM
         if a <= 0: break
         e = 1 - (1 - min(1, a)) ** 3; dy = int(round((1 - e) * SUBE)); col = RED if w.lower().strip('.,:;¿?') in ROJAS else INK
         lay = Image.new('RGBA', (int(_d.textlength(w, font=FT)) + 24, 110), (0, 0, 0, 0)); ImageDraw.Draw(lay).text((0, 0), w, font=FT, fill=col + (int(255 * e),))
@@ -47,10 +48,12 @@ files = sorted(glob.glob(f'{FR}/*.png'))
 for i, p in enumerate(files):
     t = i / FPS; im = Image.open(p).convert('RGB'); im.paste(Image.new('RGB', (1080, 520), PAPER), (0, 0), TOP); (im.paste(Image.new('RGB', (1080, 420), PAPER), (0, 1500), BOT) if LIN else None)
     im = im.convert('RGBA'); d = ImageDraw.Draw(im)
-    cur = [x for x in T['textos'] if x[0] <= t < x[1]]
+    cur = [k for k, x in enumerate(T['textos']) if x[0] <= t < x[1]]
     if cur:
-        t0, _, kick, title = cur[-1][:4]; ka = min(1, (t - t0) / 0.15)
-        d.text((64, 150), kick, font=FK, fill=RED + (int(255 * ka),)); palabras(im, title, t, t0)
+        k = cur[-1]; t0, _, kick, title = T['textos'][k][:4]; ka = min(1, (t - t0) / 0.15); nw = len(title.split())
+        if PLAN and k < len(PLAN): start = PLAN[k]['t0']; paso = min(0.5, max(0.1, 0.9 * (PLAN[k]['t1'] - PLAN[k]['t0']) / nw))
+        else: start, paso = t0 + 0.08, PAS
+        d.text((64, 150), kick, font=FK, fill=RED + (int(255 * ka),)); palabras(im, title, t, start, paso)
     (linea(d, anio(t)) if LIN else None); im.convert('RGB').save(f'/tmp/frames/{i:05d}.jpg', quality=93)
 P = T['portada']; im = Image.open(files[min(P['fotograma'], len(files) - 1)]).convert('RGB')
 def halo(xy, txt, font, fill):
