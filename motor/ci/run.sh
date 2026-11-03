@@ -29,8 +29,11 @@ if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('engine'
     echo "== prueba rápida (fotogramas $PV al 50 %)"; mkdir -p /tmp/fp "videos/prueba/$OUT"
     $BL -b -noaudio -P "$SCENE" -- /tmp/escena.json /tmp/fp "$PV" 0 50 2>&1 | grep --line-buffered -E "fotograma|Error|Traceback" || true
     for f in /tmp/fp/*.png; do python3 -c "import sys; from PIL import Image; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], quality=85)" "$f" "videos/prueba/$OUT/$(basename "${f%.png}").jpg"; done
+    HOJA=$(python3 -c "import json; print(json.load(open('$J')).get('hoja', ''))")   # hoja de bocetos con los títulos de cada escena
+    if [ -n "$HOJA" ]; then python3 "$HOJA" /tmp/fp "$TEXTS" "videos/prueba/$OUT/hoja.jpg" motor/web/fonts; fi
     git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
     git add "videos/prueba/$OUT"; git commit -m "$OUT: prueba rápida antes del render completo" || true; git pull --rebase -q && git push || true
+    if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('solo_prueba') else 1)"; then echo "== solo bocetos: listo"; exit 0; fi
   fi
   echo "== fotogramas (Blender, $(nproc) núcleos)"; mkdir -p /tmp/fb
   $BL -b -noaudio -P "$SCENE" -- /tmp/escena.json /tmp/fb 0 $((FR - 1)) 2>&1 | grep --line-buffered -E "fotograma|Error|Traceback" || true   # avance cada 30 fotogramas
