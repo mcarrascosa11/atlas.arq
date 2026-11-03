@@ -3,6 +3,7 @@
 # Planta y medidas sacadas de la maqueta de SketchUp que pasó Marcos (maqueta_cementerio_aldo_rossi_2014.skp, escalada x1,26 para que el recinto mida
 # 277 x 183 m y el cono sus 25 m documentados): cubo de 18,9 x 18,9 x 14,7 m con muros de 1,07 m, 9 columnas de huecos de 1,1 m (puertas abajo y 6 filas
 # de ventanas); U central de 5 m de alto; 15 costillas de 2,2 m en triángulo hacia el cono (de 4,5 a 11,5 m de alto); cono de 16 a 5,5 m de diámetro.
+# Detrás de la fachada del cubo, un paso de 0,9 m y el muro de nichos (1 m): unos 3 m de grueso en total, como recoge la documentación.
 # Documentado aparte: galerías de 5 m de ancho y 13 m de alto, cementerio de Costa de 272 x 180 m al este. Sin construir: costillas y cono.
 # uso: blender -b -noaudio -P sancataldo_video.py -- ESCENA_JSON(no se usa) CARPETA F0 F1 [PORCENTAJE]   (F0 puede ser una lista: 45,142,...)
 import bpy, bmesh, math, sys, os, time
@@ -68,6 +69,7 @@ GAL = [crujia('gal_s', X0, Y0, X0 + LX, Y0 + WG), crujia('gal_n', X0, Y0 + LY - 
        crujia('gal_o', X0, Y0 + WG, X0 + WG, Y0 + LY - WG), crujia('gal_e', X0 + LX - WG, Y0 + WG, X0 + LX, Y0 + LY - WG)]
 XE = 138.5                                                                               # eje sur-norte
 S, E, H = 18.9, 1.07, 14.73; cx0, cy0 = 129.05, 20.04; XCUBO, YC = cx0 + S / 2, cy0 + S / 2
+GI, EI = 0.9, 1.0; A0, A1 = E + GI, E + GI + EI                                     # detrás de la fachada, un paso de 0,9 m y el muro de nichos de 1 m: ~3 m en total
 def mat_cubo():                                   # bermellón con la retícula de nichos pintada solo en las caras del patio
     m = mat('rojo_cubo', '#E2401C', 0.8); nt = m.node_tree; mul = [n for n in nt.nodes if n.bl_idname == 'ShaderNodeMix'][0]
     geo = nt.nodes.new('ShaderNodeNewGeometry'); sep = nt.nodes.new('ShaderNodeSeparateXYZ'); nt.links.new(geo.outputs['Position'], sep.inputs[0])
@@ -79,7 +81,7 @@ def mat_cubo():                                   # bermellón con la retícula 
             else: nt.links.new(v, n.inputs[k])
         return n.outputs[0]
     dx, dy = op('ABSOLUTE', op('SUBTRACT', sep.outputs['X'], XCUBO)), op('ABSOLUTE', op('SUBTRACT', sep.outputs['Y'], YC)); d = op('MAXIMUM', dx, dy)
-    patio = op('MULTIPLY', op('GREATER_THAN', d, S / 2 - E - 0.05), op('LESS_THAN', d, S / 2 - E + 0.05))
+    patio = op('MULTIPLY', op('GREATER_THAN', d, S / 2 - A1 - 0.05), op('LESS_THAN', d, S / 2 - A1 + 0.05))   # cara del muro de nichos hacia el patio
     u = op('ADD', sep.outputs['X'], sep.outputs['Y']); cu = op('LESS_THAN', op('FRACT', op('DIVIDE', u, 0.75)), 0.72); cz = op('LESS_THAN', op('FRACT', op('DIVIDE', sep.outputs['Z'], 0.75)), 0.72)
     fac = op('MULTIPLY', op('MULTIPLY', patio, op('MULTIPLY', cu, cz)), op('GREATER_THAN', sep.outputs['Z'], 0.6))
     mx = nt.nodes.new('ShaderNodeMix'); mx.data_type = 'RGBA'; mx.inputs[6].default_value = lin('#E2401C'); mx.inputs[7].default_value = lin('#B8340F')
@@ -95,6 +97,9 @@ for a_ in COLS:
         HU[0].append((cx0 + a_, cy0 - 1, z0, cx0 + a_ + 1.1, cy0 + E + 0.5, z1)); HU[1].append((cx0 + a_, cy0 + S - E - 0.5, z0, cx0 + a_ + 1.1, cy0 + S + 1, z1))
         HU[2].append((cx0 - 1, cy0 + a_, z0, cx0 + E + 0.5, cy0 + a_ + 1.1, z1)); HU[3].append((cx0 + S - E - 0.5, cy0 + a_, z0, cx0 + S + 1, cy0 + a_ + 1.1, z1))
 for k, boxes in enumerate(HU): restar(cubo, cajas(f'huecos{k}', boxes, paper))
+ZN = 2.3                                          # el columbario arranca por encima de las puertas: por abajo se sigue pasando al patio
+nichos = cajas('nichos', [(cx0 + A0, cy0 + A0, ZN, cx0 + S - A0, cy0 + A1, H), (cx0 + A0, cy0 + S - A1, ZN, cx0 + S - A0, cy0 + S - A0, H),
+                          (cx0 + A0, cy0 + A1, ZN, cx0 + A1, cy0 + S - A1, H), (cx0 + S - A1, cy0 + A1, ZN, cx0 + S - A0, cy0 + S - A1, H)], redc)   # columbario: tapa los huecos por detrás
 # U central (construida): barra de 5,8 m al norte del cubo, abierta en el eje, y dos brazos hacia el norte; 5 m de alto
 U = cajas('u_central', [(50.6, 54.1, 0, 132.0, 59.9, 5.0), (141.0, 54.1, 0, 223.9, 59.9, 5.0), (50.6, 59.9, 0, 54.9, 126.7, 5.0), (218.1, 59.9, 0, 223.9, 126.7, 5.0)], paper)
 # costillas (sin construir): 15 piezas de 2,2 m en triángulo, más cortas y más altas hacia el cono (4,5 a 11,5 m), partidas por el paso central
@@ -162,14 +167,14 @@ def camara(t):
     return SCN[-1][3]
 def estado(t):
     imagina = 3.0 <= t < 6.5                                       # el cubo «imaginado»: solo trazo, sin color
-    cubo.data.materials[0] = paper if imagina else redc
+    cubo.data.materials[0] = nichos.data.materials[0] = paper if imagina else redc
     vis_galer = t >= 10.0 and not (16.5 <= t < 20.0)               # las galerías se levantan con «una ciudad de los muertos»; fuera en la fachada de frente
     for o in GAL + [U]: o.hide_render = not vis_galer
     kg = ss((t - 10.0) / 1.6) if 10.0 <= t < 11.6 else 1.0
     for o in GAL + [U]: o.scale = (1, 1, max(0.02, kg)) if vis_galer else (1, 1, 1)
     SOL.hide_render = solar_rel.hide_render = costa_patio.hide_render = not (6.5 <= t < 10.0)
     cono.hide_render = not (t >= 20.0); espina.hide_render = not (26.0 <= t < 30.0)
-    cubo.hide_render = (6.5 <= t < 10.0) or (20.0 <= t < 26.0) or t >= 33.0
+    cubo.hide_render = nichos.hide_render = (6.5 <= t < 10.0) or (20.0 <= t < 26.0) or t >= 33.0
     for o in cost: o.hide_render = not (6.5 <= t < 13.0 or 26.0 <= t < 30.0)
 t0 = time.time(); n = len(FRAMES)
 for k, f in enumerate(FRAMES):
