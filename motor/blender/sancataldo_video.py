@@ -100,8 +100,9 @@ for k, boxes in enumerate(HU): restar(cubo, cajas(f'huecos{k}', boxes, paper))
 ZN = 2.3                                          # el columbario arranca por encima de las puertas: por abajo se sigue pasando al patio
 nichos = cajas('nichos', [(cx0 + A0, cy0 + A0, ZN, cx0 + S - A0, cy0 + A1, H), (cx0 + A0, cy0 + S - A1, ZN, cx0 + S - A0, cy0 + S - A0, H),
                           (cx0 + A0, cy0 + A1, ZN, cx0 + A1, cy0 + S - A1, H), (cx0 + S - A1, cy0 + A1, ZN, cx0 + S - A0, cy0 + S - A1, H)], redc)   # columbario: tapa los huecos por detrás
-OBJP = 'datos/sancataldo/maqueta_cementerio_aldo_rossi_2014.obj'; SMQ = 1.262             # maqueta de SketchUp de Marcos, a escala real (el cono sale con sus 25 m)
-MAQ = os.path.exists(OBJP)
+import glob
+OBJP = (sorted(glob.glob('datos/sancataldo/*.obj')) or [''])[0]; SMQ = 1.262             # maqueta de SketchUp de Marcos (se llame como se llame el .obj), a escala real: el cono sale con sus 25 m
+MAQ = bool(OBJP) and os.path.exists(OBJP)
 if MAQ:
     antes = set(bpy.data.objects); bpy.ops.wm.obj_import(filepath=OBJP, forward_axis='NEGATIVE_Z', up_axis='Y')
     nuevos = [o for o in bpy.data.objects if o not in antes and o.type == 'MESH']; bm = bmesh.new()
