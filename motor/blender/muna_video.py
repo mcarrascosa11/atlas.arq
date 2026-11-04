@@ -1,7 +1,8 @@
 # 018 · El Museo Nacional del Ecuador (MuNa) · vídeo de 36 s en Blender: Cycles en colores planos + Freestyle.
 # Entorno real: edificios de OpenStreetMap alrededor del parque La Carolina (Quito) con sus plantas o alturas (datos/muna/osm.json).
 # Solar: unos 13.000 m² en la esquina suroeste de las avenidas Eloy Alfaro y De la República (posición aproximada sobre el plano).
-# «Ecos del Sol» (Campo Baeza + MAODA) y «Estratos Vivos» (SANAA + A0-CPA-JHS): volumetrías aproximadas a partir de las descripciones publicadas, a la espera de los paneles.
+# «Ecos del Sol» (Campo Baeza + MAODA): caja vertical con patios excavados y plaza al sur. «Estratos Vivos» (SANAA + A0-CPA-JHS): planta baja transparente,
+# estratos circulares de ladrillo escalonados con terrazas plantadas y patio circular central. Volumetrías aproximadas a partir de las descripciones publicadas.
 # uso: blender -b -noaudio -P muna_video.py -- ESCENA_JSON(no se usa) CARPETA F0 F1 [PORCENTAJE]   (F0 puede ser una lista: 45,142,...)
 import bpy, bmesh, math, sys, os, time
 from mathutils import Matrix
@@ -114,16 +115,29 @@ def elipse(bm, cx, cy, a, b, z0, z1, n=56):
     vt = [bm.verts.new((v.co.x, v.co.y, z1)) for v in vb]
     bm.faces.new(vt); bm.faces.new(list(reversed(vb)))
     for k in range(n): bm.faces.new((vb[k], vb[(k + 1) % n], vt[(k + 1) % n], vt[k]))
+TIERS = [(PCX, PCY, 52, 5.5, 12.0), (PCX - 5, PCY + 4, 44, 12.0, 18.0), (PCX + 4, PCY - 3, 36, 18.0, 24.0), (PCX - 2, PCY + 6, 27, 24.0, 29.5)]
+PATIOS = [(PCX - 3, PCY + 2, 11.0), (PCX + 22, PCY - 16, 5.5)]           # patio central plantado y otro menor de luz
 def estratos(nombre, m, col):
     bm = bmesh.new()
-    for cx, cy, a, b, z0, z1 in ((PCX, PCY, 58, 44, 0, 7), (PCX - 4, PCY + 3, 52, 38, 7, 13.5), (PCX + 3, PCY - 2, 45, 32, 13.5, 20), (PCX - 2, PCY + 4, 37, 25, 20, 26.5)):
-        elipse(bm, cx, cy, a, b, z0, z1)
+    elipse(bm, PCX, PCY, 45, 45, 0, 5.5, 64)                          # planta baja transparente, metida 7 m bajo el primer estrato: sombra y paso
+    for cx, cy, r, z0, z1 in TIERS: elipse(bm, cx, cy, r, r, z0, z1, 64)   # estratos de ladrillo, cada uno más pequeño y desplazado: terrazas
     me = bpy.data.meshes.new(nombre); bm.to_mesh(me); bm.free(); ob = bpy.data.objects.new(nombre, me); link(ob, col); me.materials.append(m)
     bm = bmesh.new()
-    for cx, cy, r in ((PCX - 18, PCY + 6, 9), (PCX + 16, PCY - 8, 7), (PCX + 2, PCY + 14, 5.5)):   # patios circulares que atraviesan los estratos
-        bmesh.ops.create_cone(bm, cap_ends=True, segments=36, radius1=r, radius2=r, depth=40, matrix=Matrix.Translation((cx, cy, 13)))
+    for cx, cy, r in PATIOS: bmesh.ops.create_cone(bm, cap_ends=True, segments=48, radius1=r, radius2=r, depth=70, matrix=Matrix.Translation((cx, cy, 20)))
     me = bpy.data.meshes.new(nombre + '_patios'); bm.to_mesh(me); bm.free(); cut = bpy.data.objects.new(nombre + '_patios', me); sc.collection.objects.link(cut)
     restar(ob, cut); return ob
+def terrazas():                                                         # lo que queda al aire encima de cada estrato, plantado (mancha verde sin trazo)
+    bm = bmesh.new(); n = 64
+    for k, (cx, cy, r, z0, z1) in enumerate(TIERS):
+        rin = TIERS[k + 1][2] - 1.0 if k + 1 < len(TIERS) else 0.0
+        if rin <= 0: continue
+        ox, oy = cx, cy; z = z1 + 0.06
+        vo = [bm.verts.new((ox + (r - 1.2) * math.cos(2 * math.pi * q / n), oy + (r - 1.2) * math.sin(2 * math.pi * q / n), z)) for q in range(n)]
+        nx, ny = TIERS[k + 1][0], TIERS[k + 1][1]
+        vi = [bm.verts.new((nx + rin * math.cos(2 * math.pi * q / n), ny + rin * math.sin(2 * math.pi * q / n), z)) for q in range(n)]
+        for q in range(n): bm.faces.new((vo[q], vo[(q + 1) % n], vi[(q + 1) % n], vi[q]))
+    me = bpy.data.meshes.new('terrazas'); bm.to_mesh(me); bm.free(); ob = bpy.data.objects.new('terrazas', me); nol.objects.link(ob); me.materials.append(verde); return ob
+TERR = terrazas()
 SANAA = estratos('estratos', red, None); SANAA_D = estratos('estratos_desc', paper, pro)
 # --- el jurado: nueve piezas en la plaza (una, Luque; dos, la viceministra y el director)
 JUR = [cajas(f'jurado{k}', [(PCX - 32 + 8 * k - 1.2, -100, 0, PCX - 32 + 8 * k + 1.2, -97.6, 3.2)], paper) for k in range(9)]
@@ -150,14 +164,14 @@ CU = (PCX, PCY, 10.0)
 SCN = [(0.0, 3.0, ((PCX, PCY, 10.0), 120, 30, 35), ((PCX, PCY, 12.0), 72, 26, 30)),        # desde el parque: el solar y la caja de Campo Baeza
        (3.0, 6.5, ((PCX, PCY + 40, 0.0), 170, 180, 84), ((PCX, PCY + 40, 0.0), 150, 180, 86)),  # planta: el remate sur de La Carolina y el solar
        (6.5, 10.0, ((-65.0, -35.0, 15.0), 46, 40, 22), ((-65.0, -35.0, 15.0), 42, 48, 20)),   # gana «Ecos del Sol»
-       (10.0, 13.0, ((-65.0, -12.0, 16.0), 34, 12, 4), ((-65.0, -12.0, 16.0), 32, 18, 5)),     # la fachada desde el parque: la «muralla»
+       (10.0, 13.0, ((-65.0, -12.0, 16.0), 34, 42, 5), ((-65.0, -12.0, 16.0), 32, 48, 6)),     # la fachada desde el parque, en diagonal: la «muralla»
        (13.0, 16.5, ((-65.0, -35.0, 15.0), 46, 48, 28), ((-65.0, -35.0, 15.0), 44, 56, 30)),   # descartado: en discontinua
        (16.5, 20.0, ((PCX, -88.0, 4.0), 30, 160, 24), ((PCX, -88.0, 4.0), 28, 168, 22)),       # el jurado: Luque estaba dentro
        (20.0, 23.0, ((PCX, -88.0, 4.0), 28, 168, 22), ((PCX, -88.0, 4.0), 30, 176, 26)),       # se van la viceministra y el director
        (23.0, 26.0, ((PCX, PCY, 10.0), 62, 35, 30), ((PCX, PCY, 10.0), 58, 42, 28)),           # se repite la final
-       (26.0, 30.0, ((PCX, PCY, 12.0), 52, 210, 24), ((PCX, PCY, 12.0), 48, 218, 22)),         # gana SANAA por una décima
-       (30.0, 33.0, ((PCX, PCY + 10, 12.0), 42, 20, 8), ((PCX, PCY + 10, 12.0), 40, 26, 9)),   # el jurado prefería a B720; la gente, a Cucinella
-       (33.0, 36.2, ((PCX, PCY, 10.0), 70, 30, 34), ((PCX, PCY + 40, 0.0), 165, 22, 48))]      # Zaera-Polo, y la pregunta: los dos proyectos en el mismo solar
+       (26.0, 30.0, ((PCX, PCY, 12.0), 100, 210, 30), ((PCX, PCY, 12.0), 92, 218, 28)),        # gana SANAA por una décima: el edificio entero
+       (30.0, 33.0, ((PCX, PCY + 10, 14.0), 88, 30, 12), ((PCX, PCY + 10, 14.0), 84, 36, 14)),  # desde el parque: estratos y terrazas
+       (33.0, 36.2, ((PCX, PCY, 10.0), 110, 30, 34), ((PCX, PCY + 30, 0.0), 160, 26, 44))]     # la pregunta: primero un proyecto y luego el otro, mismo encuadre
 def camara(t):
     for a, b, A, Bv in SCN:
         if a <= t < b:
@@ -169,7 +183,7 @@ def ver(objs, v):
 def estado(t):
     k = ss((t - 6.6) / 1.4) if 6.5 <= t < 10.0 else 1.0                 # la caja se levanta al ganar
     ECOS.scale = (1, 1, max(0.02, k))
-    ver(ECOS, t < 3.0 or 6.5 <= t < 13.0); ver(ECOS_D, 13.0 <= t < 23.0 or t >= 33.0)
+    ver(ECOS, t < 3.0 or 6.5 <= t < 13.0); ver(ECOS_D, 13.0 <= t < 23.0 or 33.0 <= t < 34.6)   # al final, primero el descartado y luego el ganador: nunca los dos a la vez
     ver(ARB, t < 3.0 or 6.5 <= t < 23.0)
     ver(SOL, 3.0 <= t < 6.5 or 23.0 <= t < 26.0)
     ver(JUR, 16.5 <= t < 23.0)
@@ -178,7 +192,7 @@ def estado(t):
         if 20.0 <= t < 23.0 and k_ in (1, 7): o.hide_render = True             # la viceministra y el director se van
     ks = ss((t - 26.1) / 1.4) if 26.0 <= t < 30.0 else 1.0
     SANAA.scale = (1, 1, max(0.02, ks))
-    ver(SANAA_D, 23.0 <= t < 26.0); ver(SANAA, t >= 26.0)
+    ver(SANAA_D, 23.0 <= t < 26.0); ver(SANAA, 26.0 <= t < 33.0 or t >= 34.6); ver(TERR, 27.6 <= t < 33.0 or t >= 34.6)   # las terrazas aparecen cuando el edificio ya ha crecido
 t0 = time.time(); n = len(FRAMES)
 for k, f in enumerate(FRAMES):
     t = f / FPS; estado(t); cam_(*camara(t)); sc.render.filepath = f'{OUT}/{f:05d}.png'; bpy.ops.render.render(write_still=True)
