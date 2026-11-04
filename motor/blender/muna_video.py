@@ -1,4 +1,4 @@
-# 018 · El Museo Nacional del Ecuador (MuNa) · vídeo de 36 s en Blender: Cycles en colores planos + Freestyle.
+# 017 · El Museo Nacional del Ecuador (MuNa) · vídeo de 36 s en Blender: Cycles en colores planos + Freestyle.
 # Entorno real: edificios de OpenStreetMap alrededor del parque La Carolina (Quito) con sus plantas o alturas (datos/muna/osm.json).
 # Solar: unos 13.000 m² en la esquina suroeste de las avenidas Eloy Alfaro y De la República (posición aproximada sobre el plano).
 # «Ecos del Sol» (Campo Baeza + MAODA): caja vertical con patios excavados y plaza al sur. «Estratos Vivos» (SANAA + A0-CPA-JHS): planta baja transparente,
@@ -161,17 +161,17 @@ def cam_(tg, half, az, el):
 ss = lambda x: 0.0 if x <= 0 else 1.0 if x >= 1 else x * x * (3 - 2 * x)
 import random
 CU = (PCX, PCY, 10.0)
-SCN = [(0.0, 3.0, ((PCX, PCY, 10.0), 120, 30, 35), ((PCX, PCY, 12.0), 72, 26, 30)),        # desde el parque: el solar y la caja de Campo Baeza
-       (3.0, 6.5, ((PCX, PCY + 40, 0.0), 170, 180, 84), ((PCX, PCY + 40, 0.0), 150, 180, 86)),  # planta: el remate sur de La Carolina y el solar
-       (6.5, 10.0, ((-65.0, -35.0, 15.0), 46, 40, 22), ((-65.0, -35.0, 15.0), 42, 48, 20)),   # gana «Ecos del Sol»
-       (10.0, 13.0, ((-65.0, -12.0, 16.0), 34, 42, 5), ((-65.0, -12.0, 16.0), 32, 48, 6)),     # la fachada desde el parque, en diagonal: la «muralla»
-       (13.0, 16.5, ((-65.0, -35.0, 15.0), 46, 48, 28), ((-65.0, -35.0, 15.0), 44, 56, 30)),   # descartado: en discontinua
-       (16.5, 20.0, ((PCX, -88.0, 4.0), 30, 160, 24), ((PCX, -88.0, 4.0), 28, 168, 22)),       # el jurado: Luque estaba dentro
-       (20.0, 23.0, ((PCX, -88.0, 4.0), 28, 168, 22), ((PCX, -88.0, 4.0), 30, 176, 26)),       # se van la viceministra y el director
+SCN = [(0.0, 3.0, ((PCX, PCY, 10.0), 120, 30, 35), ((PCX, PCY, 12.0), 72, 26, 30)),        # ¿pueden las redes tumbar un concurso? La caja de Campo Baeza junto al parque
+       (3.0, 6.5, ((-65.0, -35.0, 15.0), 46, 40, 22), ((-65.0, -35.0, 15.0), 42, 48, 20)),    # ganan Campo Baeza y MAODA: la caja crece
+       (6.5, 10.0, ((PCX, PCY + 40, 0.0), 170, 180, 84), ((PCX, PCY + 40, 0.0), 150, 180, 86)),  # planta: el remate sur de La Carolina y el solar
+       (10.0, 13.0, ((-65.0, -12.0, 16.0), 34, 42, 5), ((-65.0, -12.0, 16.0), 32, 48, 6)),     # la fachada desde el parque: la «muralla gris»
+       (13.0, 16.5, ((-65.0, -35.0, 15.0), 50, 300, 26), ((-65.0, -35.0, 15.0), 46, 310, 24)),  # las firmas: la caja desde el otro lado
+       (16.5, 20.0, ((-65.0, -35.0, 15.0), 46, 48, 28), ((-65.0, -35.0, 15.0), 44, 56, 30)),   # el ministro la rechaza: pasa a discontinua
+       (20.0, 23.0, ((PCX, PCY, 10.0), 110, 20, 40), ((PCX, PCY, 10.0), 120, 28, 44)),         # Luque estaba en el jurado: la caja tachada en su sitio
        (23.0, 26.0, ((PCX, PCY, 10.0), 62, 35, 30), ((PCX, PCY, 10.0), 58, 42, 28)),           # se repite la final
-       (26.0, 30.0, ((PCX, PCY, 12.0), 100, 210, 30), ((PCX, PCY, 12.0), 92, 218, 28)),        # gana SANAA por una décima: el edificio entero
-       (30.0, 33.0, ((PCX, PCY + 10, 14.0), 88, 30, 12), ((PCX, PCY + 10, 14.0), 84, 36, 14)),  # desde el parque: estratos y terrazas
-       (33.0, 36.2, ((PCX, PCY, 10.0), 110, 30, 34), ((PCX, PCY + 30, 0.0), 160, 26, 44))]     # la pregunta: primero un proyecto y luego el otro, mismo encuadre
+       (26.0, 30.0, ((PCX, PCY, 12.0), 100, 210, 30), ((PCX, PCY, 12.0), 92, 218, 28)),        # gana SANAA: el edificio entero
+       (30.0, 33.0, ((PCX, PCY + 10, 14.0), 88, 30, 12), ((PCX, PCY + 10, 14.0), 84, 36, 14)),  # Zaera-Polo: desde el parque, estratos y terrazas
+       (33.0, 36.2, ((PCX, PCY, 10.0), 110, 30, 34), ((PCX, PCY + 30, 0.0), 160, 26, 44))]     # por una décima: primero un proyecto y luego el otro, mismo encuadre
 def camara(t):
     for a, b, A, Bv in SCN:
         if a <= t < b:
@@ -181,15 +181,12 @@ def camara(t):
 def ver(objs, v):
     for o in (objs if isinstance(objs, list) else [objs]): o.hide_render = not v
 def estado(t):
-    k = ss((t - 6.6) / 1.4) if 6.5 <= t < 10.0 else 1.0                 # la caja se levanta al ganar
+    k = ss((t - 3.1) / 1.4) if 3.0 <= t < 6.5 else 1.0                   # la caja crece al ganar
     ECOS.scale = (1, 1, max(0.02, k))
-    ver(ECOS, t < 3.0 or 6.5 <= t < 13.0); ver(ECOS_D, 13.0 <= t < 23.0 or 33.0 <= t < 34.6)   # al final, primero el descartado y luego el ganador: nunca los dos a la vez
-    ver(ARB, t < 3.0 or 6.5 <= t < 23.0)
-    ver(SOL, 3.0 <= t < 6.5 or 23.0 <= t < 26.0)
-    ver(JUR, 16.5 <= t < 23.0)
-    for k_, o in enumerate(JUR):
-        o.data.materials[0] = red if (k_ == 5 and 16.5 <= t < 23.0) else paper   # Luque, delegado del presidente, en bermellón
-        if 20.0 <= t < 23.0 and k_ in (1, 7): o.hide_render = True             # la viceministra y el director se van
+    ver(ECOS, t < 17.0); ver(ECOS_D, 17.0 <= t < 23.0 or 33.0 <= t < 34.6)   # rechazada: discontinua; al final, primero el descartado y luego el ganador
+    ver(ARB, t < 23.0)
+    ver(SOL, 6.5 <= t < 10.0 or 23.0 <= t < 26.0)
+    ver(JUR, False)
     ks = ss((t - 26.1) / 1.4) if 26.0 <= t < 30.0 else 1.0
     SANAA.scale = (1, 1, max(0.02, ks))
     ver(SANAA_D, 23.0 <= t < 26.0); ver(SANAA, 26.0 <= t < 33.0 or t >= 34.6); ver(TERR, 27.6 <= t < 33.0 or t >= 34.6)   # las terrazas aparecen cuando el edificio ya ha crecido
