@@ -1,0 +1,1 @@
+FALLO datos/muna/osm.json: <urlopen error [Errno 101] Network is unreachable>
