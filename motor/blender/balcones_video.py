@@ -64,31 +64,33 @@ glass, shop, sate = mat('vidrio', '#D8D4CA', 0.9), mat('comercio', '#CBC5B9', 0.
 # --- bloques: planta baja de 4 m y 7 plantas de 3 m; seis crujías de 4 m (24 m de fachada) y 12 m de fondo; la fachada principal mira al sur (y = Y0)
 PB, HP, NP, NB, CR, FON = 4.0, 3.0, 7, 6, 4.0, 12.0
 def zf(p): return PB + (p - 1) * HP                      # cota del suelo de la planta p (1..7)
-def bloque(nm, X0):
-    cajas(nm, [(X0, 0, 0, X0 + NB * CR, FON, PB + NP * HP)], paper); cajas(nm + '_cornisa', [(X0 - 0.3, -0.3, PB + NP * HP - 0.5, X0 + NB * CR + 0.3, FON + 0.3, PB + NP * HP)], paper)
-    vent = []
+def ventanas(nm, X0):                                         # todas las ventanas de un bloque en una sola malla (6 caras por ventana): vidrio o bermellón
+    bm = bmesh.new()
     for p in range(1, NP + 1):
         for b in range(NB):
-            cx = X0 + b * CR + CR / 2; vent.append(cajas(f'{nm}_v{p}_{b}', [(cx - 0.7, -0.06, zf(p) + 0.9, cx + 0.7, 0, zf(p) + 2.4)], glass))
+            cx = X0 + b * CR + CR / 2; x0, y0, z0, x1, y1, z1 = cx - 0.7, -0.06, zf(p) + 0.9, cx + 0.7, 0, zf(p) + 2.4
+            bmesh.ops.create_cube(bm, size=1.0, matrix=Matrix.Translation(((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2)) @ Matrix.Diagonal((x1 - x0, y1 - y0, z1 - z0, 1)))
+    me = bpy.data.meshes.new(nm); bm.to_mesh(me); bm.free(); ob = bpy.data.objects.new(nm, me); link(ob, None); me.materials.append(glass); me.materials.append(red); return ob
+def bloque(nm, X0):                                           # pocas mallas por bloque: con cientos de objetos sueltos el trazo se vuelve lentísimo
+    cajas(nm, [(X0, 0, 0, X0 + NB * CR, FON, PB + NP * HP), (X0 - 0.3, -0.3, PB + NP * HP - 0.5, X0 + NB * CR + 0.3, FON + 0.3, PB + NP * HP)], paper)
     cajas(nm + '_bajos', [(X0 + b * CR + 0.4, -0.06, 0.3, X0 + b * CR + CR - 0.4, 0, 3.3) for b in range(NB)], shop)
-    return vent
-def balcon(nm, cx, p, m, col=None, y0=0.0, lado=False):     # 4 x 2,5 m = 10 m²: losa de 20 cm y barandilla de 1,10 m
+    return ventanas(nm + '_ventanas', X0)
+def bal(cx, p, y0=0.0, lado=False):                           # 4 x 2,5 m = 10 m²: losa de 20 cm y barandilla de 1,10 m
     z = zf(p)
-    if not lado: B = [(cx - 2, y0 - 2.5, z - 0.2, cx + 2, y0, z), (cx - 2, y0 - 2.5, z, cx + 2, y0 - 2.42, z + 1.1), (cx - 2, y0 - 2.5, z, cx - 1.92, y0, z + 1.1), (cx + 1.92, y0 - 2.5, z, cx + 2, y0, z + 1.1)]
-    else:   B = [(cx, y0 - 2, z - 0.2, cx + 2.5, y0 + 2, z), (cx + 2.42, y0 - 2, z, cx + 2.5, y0 + 2, z + 1.1), (cx, y0 - 2, z, cx + 2.5, y0 - 1.92, z + 1.1), (cx, y0 + 1.92, z, cx + 2.5, y0 + 2, z + 1.1)]
-    return cajas(nm, B, m, col)
+    if not lado: return [(cx - 2, y0 - 2.5, z - 0.2, cx + 2, y0, z), (cx - 2, y0 - 2.5, z, cx + 2, y0 - 2.42, z + 1.1), (cx - 2, y0 - 2.5, z, cx - 1.92, y0, z + 1.1), (cx + 1.92, y0 - 2.5, z, cx + 2, y0, z + 1.1)]
+    return [(cx, y0 - 2, z - 0.2, cx + 2.5, y0 + 2, z), (cx + 2.42, y0 - 2, z, cx + 2.5, y0 + 2, z + 1.1), (cx, y0 - 2, z, cx + 2.5, y0 - 1.92, z + 1.1), (cx, y0 + 1.92, z, cx + 2.5, y0 + 2, z + 1.1)]
 XA, XB, XC = 0.0, 40.0, 80.0
 VA = bloque('A', XA); bloque('B', XB); bloque('C', XC)
 CXB = XA + 2 * CR + CR / 2                                  # el balcón del gancho: crujía 3, planta 4
-B1 = balcon('balcon10', CXB, 4, red)
+B1 = cajas('balcon10', bal(CXB, 4), red)
 MITAD = cajas('mitad', [(CXB - 2, -2.5, zf(4) + 0.01, CXB, 0, zf(4) + 0.03)], red, nol)   # «computaban al 50 %»: media losa en bermellón
-PA_list = [balcon(f'pa{p}_{b}', XA + b * CR + CR / 2, p, paper, pro) for p in range(1, NP + 1) for b in range(NB)]
-EXB = [balcon(f'eb{b}', XB + b * CR + CR / 2, 1, paper) for b in range(NB)]               # paseo de Bizkaia: solo el primer piso tiene balcón
-PB_list = [balcon(f'pb{p}_{b}', XB + b * CR + CR / 2, p, paper, pro) for p in range(2, NP + 1) for b in range(NB)]   # la propuesta de Balkoitu!: todas las plantas
-XE_ = XC + NB * CR; MAN = [balcon(f'mn{p}', XE_, p, red, None, y0=6.0, lado=True) for p in range(1, NP + 1)]   # Manteo: saliente con balcones en la fachada lateral
-MAN.append(cajas('mn_pilares', [(XE_ + 2.3, 3.8, 0, XE_ + 2.6, 4.1, zf(NP) + 1.1), (XE_ + 2.3, 7.9, 0, XE_ + 2.6, 8.2, zf(NP) + 1.1)], red))
+PA_ = cajas('propA', [q for p in range(1, NP + 1) for b in range(NB) for q in bal(XA + b * CR + CR / 2, p)], paper, pro)        # todos los balcones posibles, en discontinua
+EXB = cajas('exB', [q for b in range(NB) for q in bal(XB + b * CR + CR / 2, 1)], paper)                                      # paseo de Bizkaia: solo el primer piso tiene balcón
+PB_ = cajas('propB', [q for p in range(2, NP + 1) for b in range(NB) for q in bal(XB + b * CR + CR / 2, p)], paper, pro)      # la propuesta de Balkoitu!: todas las plantas
+XE_ = XC + NB * CR
+MAN = cajas('manteo', [q for p in range(1, NP + 1) for q in bal(XE_, p, 6.0, True)] + [(XE_ + 2.3, 3.8, 0, XE_ + 2.6, 4.1, zf(NP) + 1.1), (XE_ + 2.3, 7.9, 0, XE_ + 2.6, 8.2, zf(NP) + 1.1)], red)   # Manteo: saliente lateral
 SATE = cajas('sate', [(XA - 0.15, -0.18, PB, XA + 3 * CR, 0, PB + NP * HP - 0.5)], sate)   # aislamiento por fuera en media fachada: apenas se ve
-RA = [balcon(f'ra{p}_{b}', XA + b * CR + CR / 2, p, red) for p in range(1, NP + 1) for b in range(3, NB)]   # y balcones en la otra media
+RA = cajas('balconesA', [q for p in range(1, NP + 1) for b in range(3, NB) for q in bal(XA + b * CR + CR / 2, p)], red)       # y balcones en la otra media
 me = bpy.data.meshes.new('suelo'); me.from_pydata([(-400, -400, 0), (500, -400, 0), (500, 400, 0), (-400, 400, 0)], [], [(0, 1, 2, 3)]); g = bpy.data.objects.new('suelo', me); nol.objects.link(g); g.data.materials.append(ground)
 cajas('acera', [(-40, -6, 0.0, 140, 0, 0.15)], ground, nol)
 # --- trazo: tinta continua para lo construido; bermellón discontinuo para lo que nunca se hizo
@@ -110,7 +112,7 @@ def cam_(tg, half, az, el):
     cam.location = (tg[0] + math.sin(az) * math.cos(el) * d, tg[1] + math.cos(az) * math.cos(el) * d, tg[2] + math.sin(el) * d); tgt.location = tg
 ss = lambda x: 0.0 if x <= 0 else 1.0 if x >= 1 else x * x * (3 - 2 * x)
 import random
-ORDEN = list(range(len(VA))); random.Random(17).shuffle(ORDEN)       # orden en que «votan» las ventanas en la escena de la comunidad
+NV = NP * NB; ORDEN = list(range(NV)); random.Random(17).shuffle(ORDEN); RANGO = {v: k for k, v in enumerate(ORDEN)}       # orden en que «votan» las ventanas en la escena de la comunidad
 TA, TB = (XA + 12, 0.0, 16.0), (XB + 12, 0.0, 16.0); BAL = (CXB, -1.25, zf(4)); CALLE = (XB + 12, -2.0, 10.0)
 # una toma por escena (de, a, cámara inicial, cámara final); entre escenas hay corte. Cámara: (objetivo, semialtura, azimut, elevación); azimut 180 = desde el sur
 SCN = [(0.0, 3.0, (TA, 25, 212, 14), ((CXB, -1.0, zf(4) + 0.6), 9, 206, 12)),          # el bloque y, en la planta 4, el balcón de 10 m²
@@ -123,7 +125,7 @@ SCN = [(0.0, 3.0, (TA, 25, 212, 14), ((CXB, -1.0, zf(4) + 0.6), 9, 206, 12)),   
        (23.0, 26.0, ((XB + 12, 0.0, 14.5), 23.5, 180, 6), ((XB + 12, 0.0, 14.5), 22.5, 184, 7)),   # la propuesta: en todas las plantas
        (26.0, 30.0, ((XE_ + 1.0, 6.0, 14.0), 22, 125, 12), ((XE_ + 1.0, 6.0, 14.0), 20, 132, 14)),   # Manteo: el saliente lateral
        (30.0, 33.0, ((XA + 12, 0.0, 14.5), 23.5, 180, 4), ((XA + 12, 0.0, 14.5), 22.5, 186, 6)),   # aislamiento que no se ve y balcones que sí
-       (33.0, 36.2, (CALLE, 32, 200, 18), (CALLE, 56, 206, 24))]                       # la calle entera: la norma ya está
+       (33.0, 36.2, (CALLE, 34, 236, 20), (CALLE, 52, 242, 26))]                       # la calle entera en diagonal: la norma ya está
 def camara(t):
     for a, b, A, Bv in SCN:
         if a <= t < b:
@@ -136,10 +138,14 @@ def estado(t):
     B1.scale = (1, max(0.02, ss((t - 0.5) / 0.7)), 1)                 # el balcón sale de la fachada al empezar
     ver(B1, t < 10.0); B1.data.materials[0] = red if t < 6.5 else paper   # en la escena del 50 %, losa en blanco y media en bermellón
     ver(MITAD, 6.5 <= t < 10.0)
-    ver(PA_list, 10.0 <= t < 16.5 or t >= 33.0)
-    n = int(len(VA) * ss((t - 16.7) / 3.0)) if 16.5 <= t < 20.0 else 0
-    for i, o in enumerate(VA): o.data.materials[0] = red if ORDEN.index(i) < n else glass   # la comunidad: cada vivienda que dice sí, en bermellón
-    ver(PB_list, 23.0 <= t < 26.0 or t >= 33.0)
+    ver(PA_, 10.0 <= t < 16.5 or t >= 33.0)
+    n = int(NV * ss((t - 16.7) / 3.0)) if 16.5 <= t < 20.0 else 0     # la comunidad: cada vivienda que dice sí, en bermellón
+    pol = VA.data.polygons
+    for w in range(NV):
+        mi = 1 if RANGO[w] < n else 0
+        for q in range(6 * w, 6 * w + 6): pol[q].material_index = mi
+    VA.data.update()
+    ver(PB_, 23.0 <= t < 26.0 or t >= 33.0)
     ver(MAN, t >= 26.0)
     ver(SATE, 30.0 <= t < 33.0); ver(RA, 30.0 <= t < 33.0)
 t0 = time.time(); n = len(FRAMES)
