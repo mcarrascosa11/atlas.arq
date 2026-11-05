@@ -1,1 +1,1 @@
-video=017_muna_ecuador duracion=36.200000 lufs=-14.0 md5=6b169ebfc03a6266f2cc6cc1b8720648 fecha=2026-11-04T22:53:43Z
+video=017_muna_ecuador duracion=36.200000 lufs=-14.0 md5=ea19f98d7803766fa22b03591b54537b fecha=2026-11-05T10:07:47Z
