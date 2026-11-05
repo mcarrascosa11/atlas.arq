@@ -77,7 +77,7 @@ for e in OSM:
     if 'building' not in t or e['type'] != 'way' or len(e.get('geometry', [])) < 4: continue
     g = [xy(p) for p in e['geometry']][:-1]
     mx = sum(p[0] for p in g) / len(g); my = sum(p[1] for p in g) / len(g)
-    if math.hypot(mx - PCX, my - PCY) > 650 or dentro_solar(mx, my): continue
+    if math.hypot(mx - PCX, my - PCY) > 900 or dentro_solar(mx, my): continue
     try: h = float(t['height'].split()[0]) if 'height' in t else float(t.get('building:levels', 3)) * 3.1
     except Exception: h = 9.0
     h = max(3.0, min(h, 140.0))
@@ -92,9 +92,46 @@ me = bpy.data.meshes.new('ciudad'); bm.to_mesh(me); bm.free(); CIUDAD = bpy.data
 print('edificios del entorno', nb, flush=True)
 for e in OSM:                                                           # el parque La Carolina, como mancha verde sin trazo
     if e.get('tags', {}).get('name') == 'Parque La Carolina' and e['type'] == 'way':
-        g = [xy(p) for p in e['geometry']][:-1]; me = bpy.data.meshes.new('carolina'); me.from_pydata([(x, y, 0.03) for x, y in g], [], [list(range(len(g)))])
+        g = [xy(p) for p in e['geometry']][:-1]; me = bpy.data.meshes.new('carolina'); me.from_pydata([(x, y, -0.07) for x, y in g], [], [list(range(len(g)))])
         ob = bpy.data.objects.new('carolina', me); nol.objects.link(ob); me.materials.append(verde)
-me = bpy.data.meshes.new('suelo'); me.from_pydata([(-1500, -1500, 0), (1500, -1500, 0), (1500, 1500, 0), (-1500, 1500, 0)], [], [(0, 1, 2, 3)]); g = bpy.data.objects.new('suelo', me); nol.objects.link(g); g.data.materials.append(ground)
+me = bpy.data.meshes.new('suelo'); me.from_pydata([(-1500, -1500, -0.10), (1500, -1500, -0.10), (1500, 1500, -0.10), (-1500, 1500, -0.10)], [], [(0, 1, 2, 3)]); g = bpy.data.objects.new('suelo', me); nol.objects.link(g); g.data.materials.append(ground)   # 10 cm por debajo de las bases: sin parpadeo del trazo
+# --- calles: bandas algo más oscuras que el papel, con su anchura según la categoría de la vía (sin trazo)
+ANCHO = {'trunk': 18, 'primary': 16, 'secondary': 12, 'tertiary': 9, 'residential': 6, 'pedestrian': 5}
+bm = bmesh.new()
+for e in OSM:
+    t = e.get('tags', {}); hw = t.get('highway')
+    if hw not in ANCHO or e['type'] != 'way': continue
+    g = [xy(p) for p in e.get('geometry', [])]; a = ANCHO[hw] / 2
+    for (xa, ya), (xb, yb) in zip(g, g[1:]):
+        if math.hypot((xa + xb) / 2 - PCX, (ya + yb) / 2 - PCY) > 950: continue
+        L = math.hypot(xb - xa, yb - ya)
+        if L < 0.1: continue
+        nx, ny = -(yb - ya) / L * a, (xb - xa) / L * a; ex, ey = (xb - xa) / L * a * 0.5, (yb - ya) / L * a * 0.5
+        v = [bm.verts.new((xa - ex + nx, ya - ey + ny, -0.06)), bm.verts.new((xa - ex - nx, ya - ey - ny, -0.06)), bm.verts.new((xb + ex - nx, yb + ey - ny, -0.06)), bm.verts.new((xb + ex + nx, yb + ey + ny, -0.06))]
+        bm.faces.new(v)
+me = bpy.data.meshes.new('calles'); bm.to_mesh(me); bm.free(); ob = bpy.data.objects.new('calles', me); nol.objects.link(ob); me.materials.append(mat('calle', '#E3DFD5', 1.0))
+# --- arbolado del parque La Carolina: copas sencillas en malla única (sin trazo), cerca del solar
+def dentro(px, py, poly):
+    c = False
+    for (ax, ay), (bx, by) in zip(poly, poly[1:] + poly[:1]):
+        if (ay > py) != (by > py) and px < (bx - ax) * (py - ay) / (by - ay) + ax: c = not c
+    return c
+import random
+rnd = random.Random(18); bm = bmesh.new(); nt = 0
+for e in OSM:
+    if e.get('tags', {}).get('name') == 'Parque La Carolina' and e['type'] == 'way':
+        poly = [xy(p) for p in e['geometry']][:-1]; xs, ys = [q[0] for q in poly], [q[1] for q in poly]
+        gx = min(xs)
+        while gx < max(xs):
+            gy = min(ys)
+            while gy < max(ys):
+                px, py = gx + rnd.uniform(-4, 4), gy + rnd.uniform(-4, 4)
+                if math.hypot(px - PCX, py - PCY) < 700 and dentro(px, py, poly) and rnd.random() < 0.55:
+                    r = rnd.uniform(3.0, 5.0); bmesh.ops.create_cone(bm, cap_ends=True, segments=7, radius1=r, radius2=r * 0.35, depth=r * 1.6, matrix=Matrix.Translation((px, py, 2.5 + r * 0.8))); nt += 1
+                gy += 13
+            gx += 13
+me = bpy.data.meshes.new('arbolado'); bm.to_mesh(me); bm.free(); ob = bpy.data.objects.new('arbolado', me); nol.objects.link(ob); me.materials.append(mat('copas', '#BFD2AB', 0.85))
+print('árboles del parque', nt, flush=True)
 # --- el solar: contorno en bermellón sobre el suelo
 x0, y0, x1, y1 = SOLAR
 SOL = cajas('solar', [(x0, y0 - 0.5, 0.05, x1, y0 + 0.5, 0.15), (x0, y1 - 0.5, 0.05, x1, y1 + 0.5, 0.15), (x0 - 0.5, y0, 0.05, x0 + 0.5, y1, 0.15), (x1 - 0.5, y0, 0.05, x1 + 0.5, y1, 0.15)], mat('linea_roja', '#E2401C', 1.0), nol)
@@ -161,13 +198,13 @@ def cam_(tg, half, az, el):
 ss = lambda x: 0.0 if x <= 0 else 1.0 if x >= 1 else x * x * (3 - 2 * x)
 import random
 CU = (PCX, PCY, 10.0)
-SCN = [(0.0, 3.0, ((PCX, PCY, 10.0), 120, 30, 35), ((PCX, PCY, 12.0), 72, 26, 30)),        # ¿pueden las redes tumbar un concurso? La caja de Campo Baeza junto al parque
+SCN = [(0.0, 3.0, ((PCX, PCY + 20, 10.0), 200, 30, 38), ((PCX, PCY, 12.0), 80, 26, 30)),        # ¿pueden las redes tumbar un concurso? La caja de Campo Baeza junto al parque
        (3.0, 6.5, ((-65.0, -35.0, 15.0), 46, 40, 22), ((-65.0, -35.0, 15.0), 42, 48, 20)),    # ganan Campo Baeza y MAODA: la caja crece
        (6.5, 10.0, ((PCX, PCY + 40, 0.0), 170, 180, 84), ((PCX, PCY + 40, 0.0), 150, 180, 86)),  # planta: el remate sur de La Carolina y el solar
        (10.0, 13.0, ((-65.0, -12.0, 16.0), 34, 42, 5), ((-65.0, -12.0, 16.0), 32, 48, 6)),     # la fachada desde el parque: la «muralla gris»
        (13.0, 16.5, ((-65.0, -35.0, 15.0), 50, 300, 26), ((-65.0, -35.0, 15.0), 46, 310, 24)),  # las firmas: la caja desde el otro lado
        (16.5, 20.0, ((-65.0, -35.0, 15.0), 46, 48, 28), ((-65.0, -35.0, 15.0), 44, 56, 30)),   # el ministro la rechaza: pasa a discontinua
-       (20.0, 23.0, ((PCX, PCY, 10.0), 110, 20, 40), ((PCX, PCY, 10.0), 120, 28, 44)),         # Luque estaba en el jurado: la caja tachada en su sitio
+       (20.0, 23.0, ((PCX, PCY + 40, 10.0), 170, 20, 42), ((PCX, PCY + 40, 10.0), 190, 28, 46)),         # Luque estaba en el jurado: la caja tachada en su sitio
        (23.0, 26.0, ((PCX, PCY, 10.0), 62, 35, 30), ((PCX, PCY, 10.0), 58, 42, 28)),           # se repite la final
        (26.0, 30.0, ((PCX, PCY, 12.0), 100, 210, 30), ((PCX, PCY, 12.0), 92, 218, 28)),        # gana SANAA: el edificio entero
        (30.0, 33.0, ((PCX, PCY + 10, 14.0), 88, 30, 12), ((PCX, PCY + 10, 14.0), 84, 36, 14)),  # Zaera-Polo: desde el parque, estratos y terrazas
