@@ -1,0 +1,2 @@
+ok 44639 B  datos/cdd/casco_osm.json
+ok 1267461 B  datos/cdd/ccaa.geojson
