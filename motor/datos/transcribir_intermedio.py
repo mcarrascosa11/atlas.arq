@@ -13,14 +13,19 @@ for intento in (['--geo-bypass-country', 'ES'], []):          # sin extraer audi
     if glob.glob('/tmp/intermedio_*'): break
 fs = sorted(glob.glob('/tmp/intermedio_*'))
 if not fs: log('SIN VIDEO: no se pudo descargar'); sys.exit(0)
-from faster_whisper import WhisperModel
-m = WhisperModel('small', device='cpu', compute_type='int8')
-lineas = []
-for k, f in enumerate(fs):
-    segs, info = m.transcribe(f, language='es', vad_filter=True, beam_size=5)
-    lineas.append(f'=== vídeo {k + 1} ({info.duration:.0f} s) ===')
-    lineas += [f'[{int(sg.start) // 60:02d}:{int(sg.start) % 60:02d}] {sg.text.strip()}' for sg in segs]
-    log(f'vídeo {k + 1}: {info.duration:.0f} s transcritos')
+import traceback
+log('archivos: ' + ', '.join(f'{x} ({os.path.getsize(x) // 1024} KB)' for x in fs))
+try:
+    from faster_whisper import WhisperModel
+    m = WhisperModel('small', device='cpu', compute_type='int8')
+    lineas = []
+    for k, f in enumerate(fs):
+        segs, info = m.transcribe(f, language='es', vad_filter=True, beam_size=5)
+        lineas.append(f'=== vídeo {k + 1} ({info.duration:.0f} s) ===')
+        lineas += [f'[{int(sg.start) // 60:02d}:{int(sg.start) % 60:02d}] {sg.text.strip()}' for sg in segs]
+        log(f'vídeo {k + 1}: {info.duration:.0f} s transcritos')
+except Exception:
+    log('FALLO EN LA TRANSCRIPCIÓN:'); log(traceback.format_exc()[-3000:]); sys.exit(0)
 open('/tmp/t.txt', 'w').write('\n'.join(lineas) + '\n')
 log(f'transcrito: {len(lineas)} líneas')
 PUB = '''-----BEGIN PUBLIC KEY-----
