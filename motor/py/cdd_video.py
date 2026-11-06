@@ -1,4 +1,4 @@
-# 018 · Centros de datos en Aragón · vídeo de 41,2 s dibujado en 2D (plantas y gráficos, como el 002) con matplotlib.
+# 018 · Centros de datos en Aragón · vídeo de 37,7 s dibujado en 2D (plantas y gráficos, como el 002) con matplotlib.
 # Datos: comunidades autónomas (datos/cdd/ccaa.geojson), Casco Histórico de Zaragoza (datos/cdd/casco_osm.json, OpenStreetMap).
 # Los puntos de los proyectos son ubicaciones aproximadas por municipio y los símbolos del mapa no están a escala (se indica en pantalla).
 # uso: python3 cdd_video.py -- ESCENA_JSON(no se usa) CARPETA F0 F1 [PORCENTAJE]   (F0 puede ser una lista: 45,142,...)
@@ -163,8 +163,8 @@ def e_reloj(u, t):
         x, y = x0 + (x1 - x0) * a, y0 + (y1 - y0) * a; sz = 26 * (1 - a) + 9 * a
         ax.add_patch(Rectangle((x - sz / 2, y - sz / 2), sz, sz, fc=RED, ec=INK, lw=0.6))
     if u < 0.3: txt(160, 260, '82 NAVES', 26, SG, RED)
-SCN = [(0.0, 3.5, e_mapa), (3.5, 7.0, e_escala), (7.0, 10.5, e_icio), (10.5, 14.0, e_empleo), (14.0, 17.5, e_confi), (17.5, 21.0, e_red),
-       (21.0, 24.5, e_agua), (24.5, 28.0, e_sector), (28.0, 31.5, e_produce), (31.5, 35.0, e_consume), (35.0, 38.0, e_territorio), (38.0, 41.2, e_reloj)]
+SCN = [(0.0, 3.5, e_mapa), (3.5, 7.0, e_escala), (7.0, 10.5, e_icio), (10.5, 14.0, e_empleo), (14.0, 17.5, e_red), (17.5, 21.0, e_agua),
+       (21.0, 24.5, e_sector), (24.5, 28.0, e_produce), (28.0, 31.5, e_consume), (31.5, 34.5, e_territorio), (34.5, 37.7, e_reloj)]   # sin la escena de la confidencialidad
 t0 = time.time(); n = len(FRAMES)
 for k, f in enumerate(FRAMES):
     t = f / FPS; lienzo()
