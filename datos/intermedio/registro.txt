@@ -1,54 +1,19 @@
-yt-dlp ['--geo-bypass-country', 'ES'] -> 1
-0:35
-[download]   0.1% of   43.19MiB at    1.14MiB/s ETA 00:37
-[download]   0.3% of   43.19MiB at  736.74KiB/s ETA 00:59
-[download]   0.6% of   43.19MiB at  859.86KiB/s ETA 00:51
-[download]   1.2% of   43.19MiB at    1.35MiB/s ETA 00:31
-[download]   2.3% of   43.19MiB at    1.96MiB/s ETA 00:21
-[download]   4.6% of   43.19MiB at    3.09MiB/s ETA 00:13
-[download]   9.3% of   43.19MiB at    5.07MiB/s ETA 00:07
-[download]  18.5% of   43.19MiB at    8.59MiB/s ETA 00:04
-[download]  27.8% of   43.19MiB at   11.47MiB/s ETA 00:02
-[download]  37.0% of   43.19MiB at   13.83MiB/s ETA 00:01
-[download]  46.3% of   43.19MiB at   16.18MiB/s ETA 00:01
-[download]  55.6% of   43.19MiB at   17.72MiB/s ETA 00:01
-[download]  64.8% of   43.19MiB at   19.07MiB/s ETA 00:00
-[download]  74.1% of   43.19MiB at   20.24MiB/s ETA 00:00
-[download]  83.3% of   43.19MiB at   21.69MiB/s ETA 00:00
-[download]  92.6% of   43.19MiB at   22.50MiB/s ETA 00:00
-[download] 100.0% of   43.19MiB at   23.03MiB/s ETA 00:00
-[download] 100% of   43.19MiB in 00:00:02 at 19.18MiB/s  
-[download] Downloading item 2 of 2
-[info] pedro-arrojo-doctor-fisica-denuncia-opacidad-centros-datos-imponen-silencio-absoluto-paises_202611056aed037cd3bddc0868a6c579-2: Downloading 1 format(s): 0
-[download] /tmp/intermedio.mp4 has already been downloaded
-
-[download] 100% of   43.19MiB
+yt-dlp ['--geo-bypass-country', 'ES'] -> 0
+ownload]   1.9% of   26.63MiB at    2.05MiB/s ETA 00:12
+[download]   3.8% of   26.63MiB at    2.98MiB/s ETA 00:08
+[download]   7.5% of   26.63MiB at    4.68MiB/s ETA 00:05
+[download]  15.0% of   26.63MiB at    7.69MiB/s ETA 00:02
+[download]  30.0% of   26.63MiB at   13.01MiB/s ETA 00:01
+[download]  45.1% of   26.63MiB at   17.36MiB/s ETA 00:00
+[download]  60.1% of   26.63MiB at   20.93MiB/s ETA 00:00
+[download]  75.1% of   26.63MiB at   24.51MiB/s ETA 00:00
+[download]  90.1% of   26.63MiB at   26.83MiB/s ETA 00:00
+[download] 100.0% of   26.63MiB at   27.92MiB/s ETA 00:00
+[download] 100% of   26.63MiB in 00:00:01 at 22.95MiB/s  
 [download] Finished downloading playlist: Pedro Arrojo, doctor en física, denuncia la opacidad de los centros de datos: "Imponen un silencio absoluto a los países"
 
+WARNING: "-f best" selects the best pre-merged format which is often not the best option.
+         To let yt-dlp download and merge the best available formats, simply do not pass any format selection.
+         If you know what you are doing and want only the best pre-merged format, use "-f b" instead to suppress this warning
 WARNING: [generic] Falling back on generic information extractor
-ERROR: Postprocessing: ffprobe and ffmpeg not found. Please install or provide the path using --ffmpeg-location
-ERROR: Postprocessing: ffprobe and ffmpeg not found. Please install or provide the path using --ffmpeg-location
 
-yt-dlp [] -> 1
-RL: https://www.lasexta.com/programas/el-intermedio/pedro-arrojo-doctor-fisica-denuncia-opacidad-cent...3bddc0868a6c579.html
-[generic] pedro-arrojo-doctor-fisica-denuncia-opacidad-centros-datos-imponen-silencio-absoluto-paises_202611056aed037cd3bddc0868a6c579: Downloading webpage
-[generic] pedro-arrojo-doctor-fisica-denuncia-opacidad-centros-datos-imponen-silencio-absoluto-paises_202611056aed037cd3bddc0868a6c579: Extracting information
-[download] Downloading playlist: Pedro Arrojo, doctor en física, denuncia la opacidad de los centros de datos: "Imponen un silencio absoluto a los países"
-[generic] Playlist Pedro Arrojo, doctor en física, denuncia la opacidad de los centros de datos: "Imponen un silencio absoluto a los países": Downloading 2 items of 2
-[download] Downloading item 1 of 2
-[info] pedro-arrojo-doctor-fisica-denuncia-opacidad-centros-datos-imponen-silencio-absoluto-paises_202611056aed037cd3bddc0868a6c579-1: Downloading 1 format(s): 0
-[download] /tmp/intermedio.mp4 has already been downloaded
-
-[download] 100% of   43.19MiB
-[download] Downloading item 2 of 2
-[info] pedro-arrojo-doctor-fisica-denuncia-opacidad-centros-datos-imponen-silencio-absoluto-paises_202611056aed037cd3bddc0868a6c579-2: Downloading 1 format(s): 0
-[download] /tmp/intermedio.mp4 has already been downloaded
-
-[download] 100% of   43.19MiB
-[download] Finished downloading playlist: Pedro Arrojo, doctor en física, denuncia la opacidad de los centros de datos: "Imponen un silencio absoluto a los países"
-
-WARNING: [generic] Falling back on generic information extractor
-ERROR: Postprocessing: ffprobe and ffmpeg not found. Please install or provide the path using --ffmpeg-location
-ERROR: Postprocessing: ffprobe and ffmpeg not found. Please install or provide the path using --ffmpeg-location
-
-SIN AUDIO: no se pudo descargar
