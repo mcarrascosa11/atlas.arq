@@ -1,19 +1,35 @@
 yt-dlp ['--geo-bypass-country', 'ES'] -> 0
-ownload]   1.9% of   26.63MiB at    2.05MiB/s ETA 00:12
-[download]   3.8% of   26.63MiB at    2.98MiB/s ETA 00:08
-[download]   7.5% of   26.63MiB at    4.68MiB/s ETA 00:05
-[download]  15.0% of   26.63MiB at    7.69MiB/s ETA 00:02
-[download]  30.0% of   26.63MiB at   13.01MiB/s ETA 00:01
-[download]  45.1% of   26.63MiB at   17.36MiB/s ETA 00:00
-[download]  60.1% of   26.63MiB at   20.93MiB/s ETA 00:00
-[download]  75.1% of   26.63MiB at   24.51MiB/s ETA 00:00
-[download]  90.1% of   26.63MiB at   26.83MiB/s ETA 00:00
-[download] 100.0% of   26.63MiB at   27.92MiB/s ETA 00:00
-[download] 100% of   26.63MiB in 00:00:01 at 22.95MiB/s  
+ownload]   1.9% of   26.63MiB at    1.39MiB/s ETA 00:18
+[download]   3.8% of   26.63MiB at    2.03MiB/s ETA 00:12
+[download]   7.5% of   26.63MiB at    3.17MiB/s ETA 00:07
+[download]  15.0% of   26.63MiB at    5.19MiB/s ETA 00:04
+[download]  30.0% of   26.63MiB at    8.77MiB/s ETA 00:02
+[download]  45.1% of   26.63MiB at   11.68MiB/s ETA 00:01
+[download]  60.1% of   26.63MiB at   14.10MiB/s ETA 00:00
+[download]  75.1% of   26.63MiB at   16.48MiB/s ETA 00:00
+[download]  90.1% of   26.63MiB at   18.04MiB/s ETA 00:00
+[download] 100.0% of   26.63MiB at   19.38MiB/s ETA 00:00
+[download] 100% of   26.63MiB in 00:00:01 at 14.02MiB/s  
 [download] Finished downloading playlist: Pedro Arrojo, doctor en física, denuncia la opacidad de los centros de datos: "Imponen un silencio absoluto a los países"
 
 WARNING: "-f best" selects the best pre-merged format which is often not the best option.
          To let yt-dlp download and merge the best available formats, simply do not pass any format selection.
          If you know what you are doing and want only the best pre-merged format, use "-f b" instead to suppress this warning
 WARNING: [generic] Falling back on generic information extractor
+
+archivos: /tmp/intermedio_1.mp4 (44230 KB), /tmp/intermedio_2.mp4 (27264 KB)
+FALLO EN LA TRANSCRIPCIÓN:
+Traceback (most recent call last):
+  File "/home/runner/work/atlas.arq/atlas.arq/motor/datos/transcribir_intermedio.py", line 23, in <module>
+    segs, info = m.transcribe(f, language='es', vad_filter=True, beam_size=5)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/faster_whisper/transcribe.py", line 876, in transcribe
+    audio = decode_audio(audio, sampling_rate=sampling_rate)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/hostedtoolcache/Python/3.12.16/x64/lib/python3.12/site-packages/faster_whisper/audio.py", line 46, in decode_audio
+    with av.open(input_file, mode="r", metadata_errors="ignore") as container:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "av/container/core.py", line 479, in av.container.core.open
+    def open(
+TypeError: open() got an unexpected keyword argument 'metadata_errors'
 
