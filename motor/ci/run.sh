@@ -16,18 +16,19 @@ if python3 -c "import json,sys; sys.exit(0 if 'prep' in json.load(open('$J')) el
   git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
   git add "$D"; git commit -m "datos: $P" || true; git pull --rebase -q && git push; exit 0
 fi
-if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('engine') == 'blender' else 1)"; then   # modo Blender: escena en motor/blender
-  OUT=$(v out); DATA=$(v data); MUSIC=$(v music); SCENE=$(v scene); TEXTS=$(v texts); FR=$(v frames)
-  echo "== $OUT (Blender: $SCENE)"
+if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('engine') in ('blender', 'python') else 1)"; then   # modo Blender o Python (dibujo 2D con matplotlib): escena en motor/blender o motor/py
+  OUT=$(v out); DATA=$(v data); MUSIC=$(v music); SCENE=$(v scene); TEXTS=$(v texts); FR=$(v frames); ENG=$(v engine)
+  echo "== $OUT ($ENG: $SCENE)"
   sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg libxi6 libxkbcommon0 libsm6 libxrender1 libxxf86vm1 libxfixes3 libgl1 libegl1 > /dev/null
-  curl -sL -o /tmp/b.tar.xz https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz && tar xJf /tmp/b.tar.xz -C /tmp
-  pip install -q numpy scipy shapely pyproj trimesh manifold3d pillow fonttools brotli
+  if [ "$ENG" = blender ]; then curl -sL -o /tmp/b.tar.xz https://download.blender.org/release/Blender4.2/blender-4.2.3-linux-x64.tar.xz && tar xJf /tmp/b.tar.xz -C /tmp; fi
+  pip install -q numpy scipy shapely pyproj trimesh manifold3d pillow fonttools brotli matplotlib
   echo "== datos"; bash "$DATA"
   BL=/tmp/blender-4.2.3-linux-x64/blender
+  render() { if [ "$ENG" = python ]; then python3 "$SCENE" -- "$@"; else $BL -b -noaudio -P "$SCENE" -- "$@"; fi; }   # misma llamada para las dos
   PV=$(python3 -c "import json; print(','.join(map(str, json.load(open('$J')).get('preview', []))))")
   if [ -n "$PV" ]; then   # prueba rápida: unos fotogramas a media resolución, que se suben al repo antes del render completo
     echo "== prueba rápida (fotogramas $PV al 50 %)"; mkdir -p /tmp/fp "videos/prueba/$OUT"
-    $BL -b -noaudio -P "$SCENE" -- /tmp/escena.json /tmp/fp "$PV" 0 50 2>&1 | grep --line-buffered -E "fotograma|Error|Traceback" || true
+    render /tmp/escena.json /tmp/fp "$PV" 0 50 2>&1 | grep --line-buffered -E "fotograma|Error|Traceback|Casco" || true
     for f in /tmp/fp/*.png; do python3 -c "import sys; from PIL import Image; Image.open(sys.argv[1]).convert('RGB').save(sys.argv[2], quality=85)" "$f" "videos/prueba/$OUT/$(basename "${f%.png}").jpg"; done
     HOJA=$(python3 -c "import json; print(json.load(open('$J')).get('hoja', ''))")   # hoja de bocetos con los títulos de cada escena
     if [ -n "$HOJA" ]; then python3 "$HOJA" /tmp/fp "$TEXTS" "videos/prueba/$OUT/hoja.jpg" motor/web/fonts; fi
@@ -36,7 +37,7 @@ if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('engine'
     if python3 -c "import json,sys; sys.exit(0 if json.load(open('$J')).get('solo_prueba') else 1)"; then echo "== solo bocetos: listo"; exit 0; fi
   fi
   echo "== fotogramas (Blender, $(nproc) núcleos)"; mkdir -p /tmp/fb
-  $BL -b -noaudio -P "$SCENE" -- /tmp/escena.json /tmp/fb 0 $((FR - 1)) 2>&1 | grep --line-buffered -E "fotograma|Error|Traceback" || true   # avance cada 30 fotogramas
+  render /tmp/escena.json /tmp/fb 0 $((FR - 1)) 2>&1 | grep --line-buffered -E "fotograma|Error|Traceback" || true   # avance cada 30 fotogramas
   if python3 -c "import json,sys; sys.exit(0 if 'voz' in json.load(open('$J')) else 1)"; then   # voz de Lydia desde el historial de ElevenLabs
     echo "== voz"; pip install -q requests; python3 motor/voz/voz_render.py "$J" "$TEXTS" "$(python3 -c "print($FR / 30)")"
   fi
