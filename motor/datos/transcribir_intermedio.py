@@ -7,18 +7,22 @@ URL = 'https://www.lasexta.com/programas/el-intermedio/pedro-arrojo-doctor-fisic
 LOG = open(f'{D}/registro.txt', 'w')
 def log(s): print(s, flush=True); LOG.write(str(s) + '\n'); LOG.flush()
 subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '-U', 'yt-dlp', 'faster-whisper'], check=False)
-for intento in (['--geo-bypass-country', 'ES'], []):
-    r = subprocess.run([sys.executable, '-m', 'yt_dlp', *intento, '-f', 'bestaudio/best', '-x', '--audio-format', 'mp3', '-o', '/tmp/intermedio.%(ext)s', URL], capture_output=True, text=True)
-    log(f'yt-dlp {intento} -> {r.returncode}'); log(r.stdout[-1500:]); log(r.stderr[-2500:])
-    if glob.glob('/tmp/intermedio.mp3'): break
-f = glob.glob('/tmp/intermedio.mp3')
-if not f: log('SIN AUDIO: no se pudo descargar'); sys.exit(0)
+for intento in (['--geo-bypass-country', 'ES'], []):          # sin extraer audio: Whisper lee el mp4 directamente (no hace falta ffmpeg en el sistema)
+    r = subprocess.run([sys.executable, '-m', 'yt_dlp', *intento, '-f', 'best', '-o', '/tmp/intermedio_%(playlist_index|0)s.%(ext)s', URL], capture_output=True, text=True)
+    log(f'yt-dlp {intento} -> {r.returncode}'); log(r.stdout[-800:]); log(r.stderr[-1500:])
+    if glob.glob('/tmp/intermedio_*'): break
+fs = sorted(glob.glob('/tmp/intermedio_*'))
+if not fs: log('SIN VIDEO: no se pudo descargar'); sys.exit(0)
 from faster_whisper import WhisperModel
 m = WhisperModel('small', device='cpu', compute_type='int8')
-segs, info = m.transcribe(f[0], language='es', vad_filter=True, beam_size=5)
-lineas = [f'[{int(s.start) // 60:02d}:{int(s.start) % 60:02d}] {s.text.strip()}' for s in segs]
+lineas = []
+for k, f in enumerate(fs):
+    segs, info = m.transcribe(f, language='es', vad_filter=True, beam_size=5)
+    lineas.append(f'=== vídeo {k + 1} ({info.duration:.0f} s) ===')
+    lineas += [f'[{int(sg.start) // 60:02d}:{int(sg.start) % 60:02d}] {sg.text.strip()}' for sg in segs]
+    log(f'vídeo {k + 1}: {info.duration:.0f} s transcritos')
 open('/tmp/t.txt', 'w').write('\n'.join(lineas) + '\n')
-log(f'transcrito: {len(lineas)} fragmentos, {info.duration:.0f} s de audio')
+log(f'transcrito: {len(lineas)} líneas')
 PUB = '''-----BEGIN PUBLIC KEY-----
 MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA5V2KTla2bFWTpdg1cU9I
 MH4kcDPJ2tICeR0hW5fnKx1UX7iA+G1QpbHgMbK6g1tmlu5OWurfVfEqKUg/iTTF
