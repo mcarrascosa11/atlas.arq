@@ -83,6 +83,7 @@ def e_escala(u, t):
     if b > 0:
         ax.add_patch(Rectangle((140, 260), lado * b, lado * b, fc=PINK, ec=RED, lw=2))
         txt(140 + lado * b + 24, 260 + 20, '1.400 ha', 44 * max(0.3, b), SG, RED); txt(140, 220, 'PROYECTOS CON SUPERFICIE PUBLICADA · MISMA ESCALA', 15, color=GREY)
+        h1 = 100 * S; ax.add_patch(Rectangle((140 + lado + 30, 260 + lado - h1), h1, h1, fc=INK, ec='none', alpha=b)); txt(140 + lado + 30 + h1 + 12, 260 + lado - h1, '1 ha = 100 × 100 m', 15, color=INK, alpha=b)
 def e_icio(u, t):
     txt(140, 1220, 'ICIO QUE DEJARÍA DE COBRAR VILLAMAYOR DE GÁLLEGO', 18, color=GREY)
     txt(140, 1000, '50–60 M€', 120, SG, INK)
@@ -96,7 +97,7 @@ def e_empleo(u, t):
         for j in range(9):
             a = ss((u * 2 - (i + j) * 0.04) * 3)
             if a > 0: ax.add_patch(Rectangle((c0x + i * L, c0y + j * L), L * a, L * a, fc=PAPER, ec=GREY, lw=0.8, hatch='////'))
-    txt(160, 1140, 'MICROSOFT EN VILLAMAYOR · 81 ha (CADA CUADRO, 1 ha)', 17, color=GREY)
+    txt(160, 1140, 'MICROSOFT EN VILLAMAYOR · 81 ha · CADA CUADRO, 1 ha = 100 × 100 m', 17, color=GREY)
     import random; R = random.Random(18); n = int(40 * ss((u - 0.45) / 0.4))
     for k in range(n):
         x, y = c0x + R.uniform(10, 9 * L - 10), c0y + R.uniform(10, 9 * L - 10); ax.add_patch(Circle((x, y), 7, fc=RED, ec='none'))
@@ -119,12 +120,10 @@ def e_red(u, t):
     barra(140, 760, 640, 3600, 3600, RED, 'CENTROS DE DATOS CON ACCESO A LA RED', '3.600', ss((u - 0.3) / 0.45))
     txt(140, 640, 'RED ELÉCTRICA · NUDOS CRÍTICOS: MONTETORRERO, PLAZA, PEÑAFLOR, VILLANUEVA', 14, color=GREY)
 def e_agua(u, t):
-    n = int(302 * ss(u / 0.75)); cols = 15; pw, ph, gx, gy = 50, 25, 8, 14; x0, y0 = 120, 1240
-    for k in range(302):
-        i, j = k % cols, k // cols; x, y = x0 + i * (pw + gx), y0 - j * (ph + gy)
-        ax.add_patch(Rectangle((x, y), pw, ph, fc=RED if k < n else PAPER, ec=INK if k < n else GREY, lw=0.6))
-    txt(120, 1330, 'PISCINAS OLÍMPICAS (2.500 m³ CADA UNA)', 17, color=GREY)
-    txt(120, 330, f'{n}', 60, SG, RED); txt(330, 345, 'AMPLIACIÓN DE AMAZON · 755.000 m³/AÑO', 16, color=GREY)
+    txt(140, 1250, 'AGUA PARA REFRIGERAR, m³ AL AÑO', 18, color=GREY)
+    barra(140, 1000, 640, 53961, 755000, INK, 'EL BURGO DE EBRO, AUTORIZADO TRAS SUBIR UN 48 %', '53.961', ss(u / 0.4))
+    barra(140, 760, 640, 755000, 755000, RED, 'AMPLIACIÓN DE AMAZON A PLENO RENDIMIENTO', '755.000', ss((u - 0.3) / 0.45))
+    txt(140, 640, 'AWS · INAGA · DOCUMENTACIÓN DEL PIGA', 14, color=GREY)
 def e_sector(u, t):
     def molino(x, y, a):
         ax.plot([x, x], [y, y + 260], color=INK, lw=3)
@@ -152,13 +151,18 @@ def e_territorio(u, t):
     P = mapa(PEN, (90, 400, 990, 1380), R, lw=0.9)
     txt(140, 330, 'COMUNIDADES QUE PRODUCEN MÁS DE LO QUE CONSUMEN', 16, color=RED); txt(140, 290, 'MADRID: CONSUME EL 11 % Y PRODUCE EL 0,5 %', 16, color=INK)
 def e_reloj(u, t):
-    s = 1 - 0.9 * ss((u - 0.15) / 0.6); lado = 520 * s; cx, cy = 540, 820
-    ax.add_patch(Rectangle((cx - lado / 2, cy - lado / 2), lado, lado, fc=PINK, ec=RED, lw=2))
-    w = ss((u - 0.55) / 0.3)
+    import random; R = random.Random(82); cx, cy = 540, 820
+    a = ss((u - 0.15) / 0.55)                                         # de la nube de naves a la esfera del reloj
+    w = ss((u - 0.5) / 0.3)
     if w > 0:
-        ax.add_patch(Rectangle((cx - 60, cy + 90), 120, 260, fc=PAPER, ec=INK, lw=2, alpha=w)); ax.add_patch(Rectangle((cx - 60, cy - 350), 120, 260, fc=PAPER, ec=INK, lw=2, alpha=w))
-        ax.add_patch(Circle((cx, cy), 110, fc=PAPER, ec=INK, lw=3, alpha=w)); ax.add_patch(Rectangle((cx - lado / 2, cy - lado / 2), lado, lado, fc=PINK, ec=RED, lw=2))
-    if u < 0.5: txt(cx, cy - lado / 2 - 60, '1.400 ha', 40, SG, RED, ha='center')
+        ax.add_patch(Rectangle((cx - 70, cy + 120), 140, 300, fc=PAPER, ec=INK, lw=2, alpha=w)); ax.add_patch(Rectangle((cx - 70, cy - 420), 140, 300, fc=PAPER, ec=INK, lw=2, alpha=w))
+        ax.add_patch(Circle((cx, cy), 150, fc=PAPER, ec=INK, lw=3, alpha=w))
+    for k in range(82):
+        x0, y0 = R.uniform(160, 920), R.uniform(330, 1330); ang = k * 2.39996; rr = 95 * math.sqrt((k + 0.5) / 82)
+        x1, y1 = cx + rr * math.cos(ang), cy + rr * math.sin(ang)
+        x, y = x0 + (x1 - x0) * a, y0 + (y1 - y0) * a; sz = 26 * (1 - a) + 9 * a
+        ax.add_patch(Rectangle((x - sz / 2, y - sz / 2), sz, sz, fc=RED, ec=INK, lw=0.6))
+    if u < 0.3: txt(160, 260, '82 NAVES', 26, SG, RED)
 SCN = [(0.0, 3.5, e_mapa), (3.5, 7.0, e_escala), (7.0, 10.5, e_icio), (10.5, 14.0, e_empleo), (14.0, 17.5, e_confi), (17.5, 21.0, e_red),
        (21.0, 24.5, e_agua), (24.5, 28.0, e_sector), (28.0, 31.5, e_produce), (31.5, 35.0, e_consume), (35.0, 38.0, e_territorio), (38.0, 41.2, e_reloj)]
 t0 = time.time(); n = len(FRAMES)
