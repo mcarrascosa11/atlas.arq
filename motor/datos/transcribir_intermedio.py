@@ -6,7 +6,7 @@ D = 'datos/intermedio'; os.makedirs(D, exist_ok=True)
 URL = 'https://www.lasexta.com/programas/el-intermedio/pedro-arrojo-doctor-fisica-denuncia-opacidad-centros-datos-imponen-silencio-absoluto-paises_202611056aed037cd3bddc0868a6c579.html'
 LOG = open(f'{D}/registro.txt', 'w')
 def log(s): print(s, flush=True); LOG.write(str(s) + '\n'); LOG.flush()
-subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '-U', 'yt-dlp', 'faster-whisper'], check=False)
+subprocess.run([sys.executable, '-m', 'pip', 'install', '-q', '-U', 'yt-dlp', 'faster-whisper', 'av==12.3.0'], check=False)   # av fijo: las versiones nuevas rompen faster-whisper
 for intento in (['--geo-bypass-country', 'ES'], []):          # sin extraer audio: Whisper lee el mp4 directamente (no hace falta ffmpeg en el sistema)
     r = subprocess.run([sys.executable, '-m', 'yt_dlp', *intento, '-f', 'best', '-o', '/tmp/intermedio_%(playlist_index|0)s.%(ext)s', URL], capture_output=True, text=True)
     log(f'yt-dlp {intento} -> {r.returncode}'); log(r.stdout[-800:]); log(r.stderr[-1500:])
