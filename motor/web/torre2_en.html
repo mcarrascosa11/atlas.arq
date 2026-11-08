@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:'SG';src:url(fonts/sg700.woff2) format('woff2');font-weight:700}
+@font-face{font-family:'SG';src:url(fonts/sg700ext.woff2) format('woff2');font-weight:700;unicode-range:U+0100-024F}
+@font-face{font-family:'SG';src:url(fonts/sg500.woff2) format('woff2');font-weight:500}
+@font-face{font-family:'SG';src:url(fonts/sg500ext.woff2) format('woff2');font-weight:500;unicode-range:U+0100-024F}
+@font-face{font-family:'SM';src:url(fonts/sm400.woff2) format('woff2')}
+@font-face{font-family:'SM';src:url(fonts/sm400ext.woff2) format('woff2');unicode-range:U+0100-024F}
+html,body{margin:0;background:#F2F1EC;width:1080px;height:1920px;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px}
+#ov{position:absolute;left:0;top:0;width:1080px;height:1920px}
+#kicker{position:absolute;left:64px;top:150px;font:400 27px 'SM';letter-spacing:.06em;color:#E2401C}
+#title{position:absolute;left:62px;top:196px;width:900px;font:700 74px/1.04 'SG';color:#1A1B20;letter-spacing:-.01em}
+#subwrap{position:absolute;left:0;right:0;bottom:0;height:420px;background:linear-gradient(to bottom, rgba(242,241,236,0) 0%, rgba(242,241,236,.92) 38%, #F2F1EC 60%)}
+#sub{position:absolute;left:70px;right:70px;bottom:170px;font:700 50px/1.16 'SG';color:#1A1B20;text-align:center}
+.lab{font:400 23px 'SM';fill:#1A1B20;text-anchor:middle;paint-order:stroke;stroke:#F2F1EC;stroke-width:7px;letter-spacing:.04em}
+.maplab{font:400 27px 'SM';fill:#1A1B20;paint-order:stroke;stroke:#F2F1EC;stroke-width:8px;letter-spacing:.05em}
+.dim{font:400 27px 'SM';fill:#E2401C;text-anchor:middle;paint-order:stroke;stroke:#F2F1EC;stroke-width:7px}
+#cover{display:none;position:absolute;left:48px;top:246px}
+#cover .n{font:700 302px/0.9 'SG';color:#E2401C;letter-spacing:-.045em}
+#cover .t{font:700 66px/0.93 'SG';color:#1A1B20;margin-top:6px;width:640px;letter-spacing:-.025em}
+#cover .m{font:400 23px/1.6 'SM';color:#1A1B20;margin-top:38px}
+#cover .m b{font-weight:400;color:#E2401C}
+body.cover #kicker,body.cover #title,body.cover #sub,body.cover #subwrap,body.cover #ov{display:none}
+body.cover #cover{display:block}
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<div id="stage"></div><div id="subwrap"></div>
+<svg id="ov" viewBox="0 0 1080 1920"></svg>
+<div id="kicker"></div><div id="title">¿Por qué Zaragoza derribó su torre inclinada?</div><div id="sub"></div><div id="cover"><div class="n">005</div><div class="t">why did zaragoza tear down its leaning tower?</div><div class="m">torre nueva · gabriel gombao and other masters<br>zaragoza, ES · 1504 – 1893<br>scale <b>M</b></div></div>
+<script type="module">
+import { init } from "./torre_scene.js";
+import { traducir } from "./traducir.js";
+traducir({"¿Por qué Zaragoza derribó su torre inclinada?": "Why did Zaragoza tear down its leaning tower?", "En 1504 Zaragoza encarga una torre de reloj. Fernando el Católico da el visto bueno.": "In 1504, Zaragoza commissions a clock tower. King Ferdinand the Catholic approves it.", "La levantan maestros cristianos y mudéjares, en ladrillo y aljez.": "Christian and Mudéjar master builders raise it in brick and gypsum mortar.", "Unos 80 m de altura. En 1512 ya tiene reloj y campanas.": "About 80 m tall. By 1512 it already has a clock and bells.", "Al fraguar de forma desigual, se inclina.": "As the mortar sets unevenly, it starts to lean.", "Sube recta, se inclina hasta dos tercios de su altura y el remate vuelve a la vertical.": "It rises straight, leans up to two-thirds of its height, and the top turns back to vertical.", "En los Sitios de 1808 y 1809 sirve de atalaya sobre la ciudad.": "During the Sieges of 1808 and 1809 it serves as a lookout over the city.", "En 1741 se mide su desplome. En 1860 se refuerza la base.": "In 1741 its lean is measured. In 1860 the base is reinforced.", "En 1892 el desplome es prácticamente el mismo.": "In 1892 the lean is practically the same.", "Aun así, ese año el Ayuntamiento acuerda derribarla.": "Even so, that year the City Council votes to demolish it.", "Sus ladrillos se venden para cimientos de casas nuevas. En 1893 ya no queda nada.": "Its bricks are sold as foundations for new houses. By 1893 nothing is left.", "Hoy, en la plaza de San Felipe, un niño de bronce mira hacia donde estaba.": "Today, in Plaza San Felipe, a bronze boy looks up at where it stood.", "02 · EL DESPLOME": "02 · THE LEAN", "05 · EL DERRIBO": "05 · THE DEMOLITION", "06 · HOY": "06 · TODAY", "2/3 DE LA ALTURA": "2/3 OF ITS HEIGHT", "EL NIÑO DE BRONCE": "THE BRONZE BOY"});
+document.fonts.ready.then(() => init()).catch(e => { window.ERR = String(e.stack || e); });
+window.addEventListener('error', e => { window.ERR = String(e.error && e.error.stack || e.message); });
+</script>
+</body></html>
