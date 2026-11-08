@@ -1,7 +1,7 @@
 // Versiones en otro idioma de las escenas antiguas sin tocarlas: tras cada fotograma cambia los textos visibles
 // (título, subtítulo, rótulo de capítulo y rótulos del dibujo) según un diccionario {original: traducción}.
 // Se engancha justo cuando la escena avisa de que está lista (window.READY), antes de que se pida el primer fotograma.
-export function traducir(DIC) {
+export function traducir(DIC, opciones = {}) {
   const ancho = (n) => n.length * 21 + 20;            // mismo cálculo que las escenas para el fondo de los rótulos
   const cambia = () => {
     for (const id of ['title', 'sub', 'kicker']) { const el = document.getElementById(id); if (el && DIC[el.textContent] !== undefined) el.textContent = DIC[el.textContent]; }
@@ -13,6 +13,8 @@ export function traducir(DIC) {
   };
   let listo = false;
   Object.defineProperty(window, 'READY', { configurable: true, get: () => listo, set: (v) => {
-    if (v && !window.__traducido) { const ra = window.renderAt; window.renderAt = (t) => { const r = ra(t); cambia(); return r; }; window.__traducido = true; }
+    if (v && !window.__traducido) { const ra = window.renderAt; window.renderAt = (t) => { const r = ra(t); cambia(); return r; }; window.__traducido = true;
+      if (!window.renderCover) window.renderCover = () => { window.renderAt(opciones.portada_t ?? 0); document.body.classList.add('cover'); };   // escenas antiguas sin portada propia
+    }
     listo = v; } });
 }
