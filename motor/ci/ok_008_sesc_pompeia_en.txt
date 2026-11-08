@@ -1,0 +1,1 @@
+video=008_sesc_pompeia_en duracion=56.000000 lufs=-14.0 md5=6cc8ac2ff374c28e867fdae8b540d588 fecha=2026-11-08T09:32:42Z
