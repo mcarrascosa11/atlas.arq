@@ -1,0 +1,1 @@
+video=012_pompidou_en duracion=50.000000 lufs=-14.0 md5=971a8fbf233b18826aa17a777c9005c3 fecha=2026-11-08T22:20:19Z
