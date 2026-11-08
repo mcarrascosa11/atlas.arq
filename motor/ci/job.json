@@ -1,1 +1,1 @@
-{"engine": "blender", "scene": "motor/blender/sancataldo_video.py", "frames": 1086, "fps": 30, "data": "motor/ci/datos_ninguno.sh", "music": "motor/blender/music016.py", "texts": "motor/blender/textos016_en.json", "post": "motor/blender/post016.py", "out": "016_san_cataldo_en", "mgaudio": true, "run": 28}
+{"page": "sesc3_en.html", "frames": 1680, "fps": 30, "data": "motor/ci/datos_ninguno.sh", "music": "motor/audio/audio_de_video.py", "audio_de": "videos/008_sesc_pompeia.mp4", "out": "008_sesc_pompeia_en", "run": 29}

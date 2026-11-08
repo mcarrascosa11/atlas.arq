@@ -71,7 +71,8 @@ fi
 python motor/ci/render_ci.py
 echo "== música y montaje"; bash motor/ci/enc_ci.sh "$MUSIC" "$OUT"
 git config user.name "atlas-render"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-git add "videos/$OUT.mp4" "portadas/$OUT.jpg" motor/ci/ok.txt
+cp motor/ci/ok.txt "motor/ci/ok_$OUT.txt"; git checkout -- motor/ci/ok.txt 2>/dev/null || true   # aviso propio de cada vídeo: dos renders a la vez no chocan al guardar
+git add "videos/$OUT.mp4" "portadas/$OUT.jpg" "motor/ci/ok_$OUT.txt"
 git commit -m "$OUT: vídeo y portada renderizados en GitHub Actions"
 git pull --rebase -q && git push
 echo "== listo"
