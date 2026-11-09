@@ -90,19 +90,19 @@ def huecos(a, b, za, zb, z0, tipo, cx, cy, s):                            # vent
             for k in range(n):
                 f0, f1 = (k + 0.3) / n, (k + 0.7) / n
                 ax.add_patch(Polygon([P(f0, lv[0]), P(f1, lv[0]), P(f1, lv[1]), P(f0, lv[1])], closed=True, fc='#DCE3E6', ec=INK, lw=0.6))
-def prisma(P, z0, z1, top, lado, cx, cy, s, lw=1.0, sube=0.0, dirv=(0, 1), torre=False):
+def prisma(P, z0, z1, top, lado, cx, cy, s, lw=1.0, sube=0.0, dirv=(0, 1), torre=False, ec=INK):
     P = ccw(P); n = len(P); Z = zt(P, z1, sube, dirv)
     for i in range(n):
         a, b = P[i], P[(i + 1) % n]; nx, ny = (b[1] - a[1]), -(b[0] - a[0])         # normal exterior de la cara
         if nx * (-VX) + ny * (-VY) <= 0: continue                                     # cara de espaldas: no se dibuja
         za, zb = Z[i], Z[(i + 1) % n]
         ax.add_patch(Polygon([pr(a[0], a[1], z0, cx, cy, s), pr(b[0], b[1], z0, cx, cy, s), pr(b[0], b[1], zb, cx, cy, s), pr(a[0], a[1], za, cx, cy, s)],
-                             closed=True, fc=lado, ec=INK, lw=lw, hatch='////' if lado == PAPER else None))
+                             closed=True, fc=lado, ec=ec, lw=lw, hatch='////' if lado == PAPER else None))
         if lado == PAPER and z1 > 5:
             mx, my = (a[0] + b[0]) / 2, (a[1] + b[1]) / 2; hacia = (PATIO_C[0] - mx) * nx + (PATIO_C[1] - my) * ny
             tipo = 'lamas' if (torre and nx < -0.3 * math.hypot(nx, ny)) else 'patio' if (hacia > 0 and not torre) else 'ext'
             huecos(a, b, za, zb, z0, tipo, cx, cy, s)
-    ax.add_patch(Polygon([pr(x, y, z, cx, cy, s) for (x, y), z in zip(P, Z)], closed=True, fc=top, ec=INK, lw=lw))
+    ax.add_patch(Polygon([pr(x, y, z, cx, cy, s) for (x, y), z in zip(P, Z)], closed=True, fc=top, ec=ec, lw=lw))
 def profundo(P): return sum(x * VX + y * VY for x, y in P) / len(P)       # más lejos = mayor valor: se dibuja antes
 def prismas(cuerpos, cx, cy, s, crecer=1.0):
     for c in sorted(cuerpos, key=lambda c: -profundo(c[0])):
@@ -115,12 +115,62 @@ def hierba(cx, cy, s, a=1.0):                         # escalera de hierba: terr
         P = [(5.1 - 6.5 * f - 1.3, 14.5 - 3.3 * f - 0.7), (6.2 - 6.5 * f - 1.3, 9.1 - 3.3 * f - 0.7), (6.2 - 6.5 * f, 9.1 - 3.3 * f), (5.1 - 6.5 * f, 14.5 - 3.3 * f)]
         if f <= a: cs.append((P, 0.0, z + 0.6, GRASS, '#B7C9A0', 0.6))
     prismas(cs, cx, cy, s)
-def edificio(cx, cy, s, crecer=1.0, c_res=PAPER, c_ofi=PAPER, c_con=PAPER, c_bib=PAPER, patio=True):
+# --- contexto del lugar (OpenStreetMap): el ayuntamiento no es un objeto suelto
+RC = 170.0; C0 = (8.0, 20.0)
+def _cerca(g): cxg = sum(x for x, _ in g) / len(g); cyg = sum(y for _, y in g) / len(g); return math.hypot(cxg - C0[0], cyg - C0[1]) < RC
+ALT = {'apartments': 9.0, 'detached': 6.0, 'terrace': 4.0, 'shed': 3.0, 'retail': 4.5, 'warehouse': 6.0}
+CTX_B, CTX_G, CTX_R = [], [], []
+for e in CTX:
+    t = e.get('tags', {}); g = [xy(p) for p in e['geometry']]
+    if not _cerca(g): continue
+    if 'building' in t:
+        lv = t.get('building:levels'); h = float(lv) * 3.0 + 0.5 if lv and lv.replace('.', '').isdigit() else ALT.get(t['building'], 6.0)
+        CTX_B.append((hull(g[:-1] if g[0] == g[-1] else g), h))
+    elif t.get('natural') in ('wood',) or t.get('landuse') in ('forest', 'grass', 'meadow') or t.get('leisure') == 'park': CTX_G.append(g)
+    elif 'highway' in t: CTX_R.append((g, t['highway']))
+def _dentro(x, y, g):
+    c = False
+    for i in range(len(g)):
+        (x1, y1), (x2, y2) = g[i], g[i - 1]
+        if (y1 > y) != (y2 > y) and x < x1 + (y - y1) * (x2 - x1) / (y2 - y1): c = not c
+    return c
+import random as _rnd
+_R = _rnd.Random(19); ARBOLES = []
+for g in CTX_G:                                                           # arbolado: puntos al tresbolillo dentro de bosques y parques, sin pisar edificios
+    xs = [x for x, _ in g]; ys = [y for _, y in g]
+    for gx in range(int(min(xs)), int(max(xs)), 9):
+        for gy in range(int(min(ys)), int(max(ys)), 9):
+            x, y = gx + _R.uniform(-3, 3), gy + _R.uniform(-3, 3)
+            if math.hypot(x - C0[0], y - C0[1]) < RC and _dentro(x, y, g) and not any(_dentro(x, y, b) for b, _ in CTX_B) and not (-25 < x < 40 and -8 < y < 52):
+                ARBOLES.append((x, y))
+ARBOLES = ARBOLES[:260]
+def suelo(cx, cy, s):                                                     # zonas verdes y calles, en el plano del terreno
+    for g in CTX_G: ax.add_patch(Polygon([pr(x, y, 0, cx, cy, s) for x, y in g], closed=True, fc='#E8EDDF', ec='none'))
+    for g, kind in CTX_R:
+        xs, ys = zip(*[pr(x, y, 0, cx, cy, s) for x, y in g])
+        ax.plot(xs, ys, color='#D9D5CB', lw=6 if kind in ('tertiary', 'residential') else 2.5, solid_capstyle='round', zorder=1)
+def arbol(x, y, cx, cy, s):
+    a = pr(x, y, 0, cx, cy, s); b = pr(x, y, 5.5, cx, cy, s)
+    ax.add_patch(Polygon([a, (a[0] + 1, a[1]), (b[0] + 1, b[1]), b], closed=True, fc=GREY, ec='none'))
+    ax.add_patch(Circle(b, 2.6 * s * 0.9, fc='#E3EAD8', ec=GREY, lw=0.5))
+def edificio(cx, cy, s, crecer=1.0, c_res=PAPER, c_ofi=PAPER, c_con=PAPER, c_bib=PAPER, patio=True, contexto=True, hierba_a=1.0):
+    if contexto: suelo(cx, cy, s)
     if patio: ax.add_patch(Polygon([pr(x, y, 3.0, cx, cy, s) for x, y in PATIO], closed=True, fc='#E6E3DA', ec=INK, lw=0.6))
     hacia_fuera = lambda P: (lambda c: (c[0] - PATIO_C[0], c[1] - PATIO_C[1]))((sum(x for x, _ in P) / len(P), sum(y for _, y in P) / len(P)))
-    prismas([(OESTE, 0.0, 10.0, c_res, PAPER, 1.0, dict(sube=1.2, dirv=hacia_fuera(OESTE))), (NORTE, 0.0, 10.0, c_ofi, PAPER, 1.0, dict(sube=1.2, dirv=hacia_fuera(NORTE))),
-             (ESTE, 0.0, 10.0, c_ofi, PAPER, 1.0, dict(sube=1.2, dirv=hacia_fuera(ESTE))),
-             (CONSEJO, 0.0, 17.0, c_con, PAPER, 1.0, dict(sube=3.5, dirv=(-1, 0.3), torre=True)), (BIBLIO, 0.0, 7.5, c_bib, PAPER, 1.0, dict(sube=0.8, dirv=(0, -1)))], cx, cy, s, crecer)
+    piezas = [(OESTE, 0.0, 10.0, c_res, PAPER, 1.0, dict(sube=1.2, dirv=hacia_fuera(OESTE))), (NORTE, 0.0, 10.0, c_ofi, PAPER, 1.0, dict(sube=1.2, dirv=hacia_fuera(NORTE))),
+              (ESTE, 0.0, 10.0, c_ofi, PAPER, 1.0, dict(sube=1.2, dirv=hacia_fuera(ESTE))),
+              (CONSEJO, 0.0, 17.0, c_con, PAPER, 1.0, dict(sube=3.5, dirv=(-1, 0.3), torre=True)), (BIBLIO, 0.0, 7.5, c_bib, PAPER, 1.0, dict(sube=0.8, dirv=(0, -1)))]
+    items = []
+    for P, z0, z1, top, lado, lw, extra in piezas: items.append((profundo(P), lambda P=P, z0=z0, z1=z1, top=top, lado=lado, lw=lw, extra=extra: prisma(P, z0, z0 + (z1 - z0) * crecer, top, lado, cx, cy, s, lw, **extra)))
+    pasos = 5
+    for k in range(pasos):                                                  # escalera de hierba: terrazas que bajan del patio al terreno, hacia el oeste
+        f = k / pasos; z = 3.0 * (1 - (k + 1) / pasos)
+        P = [(5.1 - 6.5 * f - 1.3, 14.5 - 3.3 * f - 0.7), (6.2 - 6.5 * f - 1.3, 9.1 - 3.3 * f - 0.7), (6.2 - 6.5 * f, 9.1 - 3.3 * f), (5.1 - 6.5 * f, 14.5 - 3.3 * f)]
+        if f <= hierba_a: items.append((profundo(P), lambda P=P, z=z: prisma(P, 0.0, z + 0.6, GRASS, '#B7C9A0', cx, cy, s, 0.6)))
+    if contexto:
+        for P, h in CTX_B: items.append((profundo(P), lambda P=P, h=h: prisma(P, 0.0, h, PAPER, '#ECEAE3', cx, cy, s, 0.5, ec=GREY)))
+        for x, y in ARBOLES: items.append((x * VX + y * VY, lambda x=x, y=y: arbol(x, y, cx, cy, s)))
+    for _, fn in sorted(items, key=lambda it: -it[0]): fn()
 # --- escenas
 def e_mapa(u, t):
     z = 0.32 + 1.3 * ss((u - 0.2) / 0.7); planta(540, 760, z, 900 / z * 1.2)
@@ -154,16 +204,16 @@ def e_seccion(u, t):
     txt(90, 470, 'DE LA LADERA AL PATIO ELEVADO', 16, color=RED); txt(90, 435, 'FROM THE SLOPE TO THE RAISED COURTYARD', 16, color=GREY)
     txt(90, 380, 'SECCIÓN ESQUEMÁTICA · SCHEMATIC SECTION', 13, color=GREY)
 def e_hierba(u, t):
-    cx, cy, s = 470, 520, 15.0; edificio(cx, cy, s); hierba(cx, cy, s, ss(u / 0.6))
-    txt(90, 330, 'ESCALERA DE HIERBA · GRASS STAIRS', 16, color=GREY); txt(90, 290, 'VOLUMETRÍA APROXIMADA · APPROXIMATE MASSING', 13, color=GREY)
+    cx, cy, s = 500, 560, 12.5; edificio(cx, cy, s, hierba_a=ss(u / 0.6))
+    txt(90, 330, 'ESCALERA DE HIERBA · GRASS STAIRS', 16, color=GREY, fondo=True); txt(90, 290, 'VOLUMETRÍA APROXIMADA · APPROXIMATE MASSING', 13, color=GREY, fondo=True)
 def e_programa(u, t):
-    cx, cy, s = 470, 520, 15.0; k = ss(u / 0.5)
-    edificio(cx, cy, s, c_con=PINK if u > 0.3 else PAPER, c_bib=PINK if u > 0.1 else PAPER, c_res=PINK if u > 0.7 else PAPER, c_ofi=PINK if u > 0.85 else PAPER); hierba(cx, cy, s)
+    cx, cy, s = 500, 560, 12.5; k = ss(u / 0.5)
+    edificio(cx, cy, s, c_con=PINK if u > 0.3 else PAPER, c_bib=PINK if u > 0.1 else PAPER, c_res=PINK if u > 0.7 else PAPER, c_ofi=PINK if u > 0.85 else PAPER)
     labs = [((25, 25, 18), 'CONSEJO · COUNCIL', 0.3), ((15, 5, 8), 'BIBLIOTECA · LIBRARY', 0.1), ((15, 5, 1), 'TIENDAS · SHOPS', 0.5), ((-12, 25, 10), 'VIVIENDAS · HOMES', 0.7), ((0, 40, 10), 'OFICINAS · OFFICES', 0.85)]
     for (x, y, z), lab, a0 in labs:
         a = ss((u - a0) / 0.15)
         if a > 0:
-            px, py = pr(x, y, z, cx, cy, s); ax.add_patch(Circle((px, py), 6, fc=RED, ec='none', alpha=a)); txt(px + 14, py + 8, lab, 17, color=INK, alpha=a)
+            px, py = pr(x, y, z, cx, cy, s); ax.add_patch(Circle((px, py), 6, fc=RED, ec='none', alpha=a, zorder=8)); txt(px + 14, py + 8, lab, 17, color=INK, alpha=a, fondo=True)
 def e_siena(u, t):                                                        # «Siena tiene 16 m; propongo 17»: dos alturas a la misma escala
     k = 44.0; y0 = 330
     def sala(x, h, c, a, lab, sub):
@@ -182,9 +232,9 @@ def e_fusion(u, t):
     a = ss((u - 0.45) / 0.3)
     txt(90, 300, '1993 · SÄYNÄTSALO + JYVÄSKYLÄ', 22, SG, INK, alpha=max(a, 0.01), fondo=True); txt(90, 260, 'EL MUNICIPIO DESAPARECE · THE MUNICIPALITY IS MERGED', 15, color=INK, alpha=max(a, 0.01), fondo=True)
 def e_unesco(u, t):
-    cx, cy, s = 470, 520, 15.0; edificio(cx, cy, s, c_res=RED, c_ofi=RED, c_con=RED, c_bib=RED); hierba(cx, cy, s)
+    cx, cy, s = 500, 560, 12.5; edificio(cx, cy, s, c_res=RED, c_ofi=RED, c_con=RED, c_bib=RED)
     a = ss((u - 0.3) / 0.3)
-    txt(90, 330, 'PATRIMONIO MUNDIAL · WORLD HERITAGE · 2026', 18, color=RED, alpha=max(a, 0.01)); txt(90, 290, 'JUNTO A OTRAS 12 OBRAS DE AALTO · WITH 12 OTHER AALTO WORKS', 13, color=GREY, alpha=max(a, 0.01))
+    txt(90, 330, 'PATRIMONIO MUNDIAL · WORLD HERITAGE · 2026', 18, color=RED, alpha=max(a, 0.01), fondo=True); txt(90, 290, 'JUNTO A OTRAS 12 OBRAS DE AALTO · WITH 12 OTHER AALTO WORKS', 13, color=GREY, alpha=max(a, 0.01), fondo=True)
 SCN = [(0.0, 5.0, e_mapa), (5.0, 10.0, e_concurso), (10.0, 15.0, e_seccion), (15.0, 19.5, e_hierba), (19.5, 24.5, e_programa),
        (24.5, 29.0, e_siena), (29.0, 35.0, e_fusion), (35.0, 40.0, e_unesco)]
 t0 = time.time(); n = len(FRAMES)
