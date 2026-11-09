@@ -28,8 +28,9 @@ CTX = [e for e in OSM if e.get('type') == 'way' and len(e.get('geometry', [])) >
 fig = plt.figure(figsize=(W / 100, H / 100), dpi=100 * PCT / 100); ax = fig.add_axes([0, 0, 1, 1])
 def lienzo():
     ax.cla(); ax.set_xlim(0, W); ax.set_ylim(0, H); ax.axis('off'); fig.patch.set_facecolor(PAPER); ax.set_facecolor(PAPER)
-def txt(x, y, s, size=22, font=None, color=INK, ha='left', va='baseline', alpha=1.0):
-    ax.text(x, y, s, fontproperties=font or SM, fontsize=size * 0.72, color=color, ha=ha, va=va, alpha=alpha)
+def txt(x, y, s, size=22, font=None, color=INK, ha='left', va='baseline', alpha=1.0, fondo=False):
+    ax.text(x, y, s, fontproperties=font or SM, fontsize=size * 0.72, color=color, ha=ha, va=va, alpha=alpha, zorder=8,
+            bbox=dict(fc=PAPER, ec='none', pad=5, alpha=0.92 * alpha) if fondo else None)          # sobre los mapas, con fondo de papel para que se lea
 # --- planta (mapa) con escala y centro dados
 def planta(cx, cy, s, R, resalta=1.0, gris=False):
     T = lambda p: (cx + p[0] * s, cy + p[1] * s)
@@ -123,7 +124,7 @@ def edificio(cx, cy, s, crecer=1.0, c_res=PAPER, c_ofi=PAPER, c_con=PAPER, c_bib
 # --- escenas
 def e_mapa(u, t):
     z = 0.32 + 1.3 * ss((u - 0.2) / 0.7); planta(540, 760, z, 900 / z * 1.2)
-    txt(90, 300, 'SÄYNÄTSALO · FINLANDIA · FINLAND', 18, color=GREY); txt(90, 260, '≈ 3.000 VECINOS · RESIDENTS (1949)', 18, color=RED)
+    txt(90, 300, 'SÄYNÄTSALO · FINLANDIA · FINLAND', 18, color=GREY, fondo=True); txt(90, 260, 'UNOS 3.000 VECINOS · ABOUT 3,000 RESIDENTS (1949)', 18, color=RED, fondo=True)
 def e_concurso(u, t):
     s = 13.0; cx, cy = 470, 640
     for P in (U, LIB):
@@ -150,7 +151,7 @@ def e_seccion(u, t):
         ax.plot([330, 750], [yp, yp], color=RED, lw=5 * p, zorder=5)
         for x0, w, h in ((250, 80, 300), (750, 90, 330)): ax.add_patch(Rectangle((x0, yp), w, h * p, fc=PAPER, ec=INK, lw=2, zorder=6))
         txt(420, yp + 22, 'PATIO · COURTYARD', 16, color=RED, alpha=p)
-    txt(90, 470, 'TIERRA EXCAVADA → PATIO ELEVADO', 16, color=RED); txt(90, 435, 'DUG EARTH → RAISED COURTYARD', 16, color=GREY)
+    txt(90, 470, 'DE LA LADERA AL PATIO ELEVADO', 16, color=RED); txt(90, 435, 'FROM THE SLOPE TO THE RAISED COURTYARD', 16, color=GREY)
     txt(90, 380, 'SECCIÓN ESQUEMÁTICA · SCHEMATIC SECTION', 13, color=GREY)
 def e_hierba(u, t):
     cx, cy, s = 470, 520, 15.0; edificio(cx, cy, s); hierba(cx, cy, s, ss(u / 0.6))
@@ -179,7 +180,7 @@ def e_siena(u, t):                                                        # «Si
 def e_fusion(u, t):
     z = 1.62 - 1.2 * ss(u / 0.7); planta(540, 760, z, 900 / z * 1.2, gris=u > 0.45)
     a = ss((u - 0.45) / 0.3)
-    txt(90, 300, '1993 · SÄYNÄTSALO → JYVÄSKYLÄ', 22, SG, INK, alpha=max(a, 0.01)); txt(90, 260, 'EL MUNICIPIO DESAPARECE · THE MUNICIPALITY IS MERGED', 15, color=GREY, alpha=max(a, 0.01))
+    txt(90, 300, '1993 · SÄYNÄTSALO + JYVÄSKYLÄ', 22, SG, INK, alpha=max(a, 0.01), fondo=True); txt(90, 260, 'EL MUNICIPIO DESAPARECE · THE MUNICIPALITY IS MERGED', 15, color=INK, alpha=max(a, 0.01), fondo=True)
 def e_unesco(u, t):
     cx, cy, s = 470, 520, 15.0; edificio(cx, cy, s, c_res=RED, c_ofi=RED, c_con=RED, c_bib=RED); hierba(cx, cy, s)
     a = ss((u - 0.3) / 0.3)
