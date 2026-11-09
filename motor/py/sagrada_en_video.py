@@ -5,7 +5,8 @@ import sys, os, math, time
 import matplotlib; matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib import font_manager
-from matplotlib.patches import Polygon, Rectangle
+from matplotlib.patches import Polygon, Rectangle, PathPatch
+from matplotlib.path import Path
 from fontTools.ttLib import TTFont
 argv = sys.argv[sys.argv.index('--') + 1:]; OUT = argv[1]; os.makedirs(OUT, exist_ok=True)
 FRAMES = [int(x) for x in argv[2].split(',')] if ',' in argv[2] else list(range(int(argv[2]), int(argv[3]) + 1)); PCT = int(argv[4]) if len(argv) > 4 else 100
@@ -51,8 +52,63 @@ def estrella(n, r1, r2, a, rot=0.0):
 def barra(x, y, w_max, v, vmax, color, etiqueta, valor, u):
     txt(x, y + 58, etiqueta, 22); w = w_max * v / vmax * ss(u)
     ax.add_patch(Rectangle((x, y), w, 46, fc=color, ec='none')); txt(x + w + 18, y + 10, valor, 30, SG, color if color == RED else INK)
+# --- axonometría (como el 002 original): manzanas del Ensanche con patio, el templo con sus torres y la escalinata en rojo
+AZ = math.radians(32); VX, VY = math.sin(AZ), math.cos(AZ)
+def pr(x, y, z, cx, cy, s):
+    u = x * math.cos(AZ) - y * math.sin(AZ); v = x * math.sin(AZ) + y * math.cos(AZ)
+    return (cx + u * s * 0.87, cy + v * s * 0.5 + z * s * 0.82)
+def ccw(Q): return Q if sum(Q[i][0] * Q[(i + 1) % len(Q)][1] - Q[(i + 1) % len(Q)][0] * Q[i][1] for i in range(len(Q))) > 0 else Q[::-1]
+def caras(Q, z0, z1, V, fc, ec=INK, lw=0.8, hatch=None, dentro=False):   # caras verticales visibles de un prisma (o del patio, si dentro=True)
+    Q = ccw(Q)
+    for i in range(len(Q)):
+        a, b = Q[i], Q[(i + 1) % len(Q)]; nx, ny = (b[1] - a[1]), -(b[0] - a[0]); vis = nx * (-VX) + ny * (-VY)
+        if (vis > 0) == (not dentro):
+            sh = 0.5 + 0.5 * abs(nx) / (math.hypot(nx, ny) + 1e-9)          # sombreado suave según la orientación
+            col = fc if fc != 'auto' else ('#FBFAF7' if sh > 0.75 else '#E4E2DA')
+            ax.add_patch(Polygon([V(a[0], a[1], z0), V(b[0], b[1], z0), V(b[0], b[1], z1), V(a[0], a[1], z1)], closed=True, fc=col, ec=ec, lw=lw, hatch=hatch))
+def manzana_axo(c, r, V, h=21.0, top=PAPER):
+    x, y = bloque(c, r); O = octo(x, y); I = octo(x + 24, y + 24, B - 48, 10)
+    caras(O, 0, h, V, 'auto')
+    ax.add_patch(Polygon([V(a, b, 0) for a, b in I], closed=True, fc='#E9E7E0', ec='none'))
+    caras(I, 0, h, V, 'auto', dentro=True)
+    oo = [V(a, b, h) for a, b in O]; ii = [V(a, b, h) for a, b in I][::-1]
+    ax.add_patch(PathPatch(Path(oo + [oo[0]] + ii + [ii[0]], [Path.MOVETO] + [Path.LINETO] * (len(oo) - 1) + [Path.CLOSEPOLY] + [Path.MOVETO] + [Path.LINETO] * (len(ii) - 1) + [Path.CLOSEPOLY]), fc=top, ec=INK, lw=0.9))
+def torre(x0, y0, r, hb, ht, V):
+    Q = [(x0 + r * math.cos(k * math.pi / 4), y0 + r * math.sin(k * math.pi / 4)) for k in range(8)]
+    caras(Q, 0, hb, V, 'auto', lw=0.6, hatch='||')
+    Q = ccw(Q); apex = V(x0, y0, ht)
+    for i in range(8):
+        a, b = Q[i], Q[(i + 1) % 8]; nx, ny = (b[1] - a[1]), -(b[0] - a[0])
+        if nx * (-VX) + ny * (-VY) > 0: ax.add_patch(Polygon([V(a[0], a[1], hb), V(b[0], b[1], hb), apex], closed=True, fc='#F4F3EE', ec=INK, lw=0.6, hatch='||'))
+def rect(x0, x1, y0, y1): return [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]
+def templo_axo(V, items):
+    x, y = bloque(1, 1); cx, cy = x + B / 2, y + B / 2
+    for R, h in ((rect(cx - 22, cx + 22, cy - 50, cy + 40), 45), (rect(cx - 45, cx + 45, cy - 8, cy + 22), 45), (rect(cx - 18, cx + 18, cy + 40, cy + 52), 40)):
+        items.append((sum(a * VX + b * VY for a, b in R) / 4, lambda R=R, h=h: (caras(R, 0, h, V, 'auto'), ax.add_patch(Polygon([V(a, b, h) for a, b in R], closed=True, fc=PAPER, ec=INK, lw=0.8)))))
+    T = [(cx, cy + 7, 9, 120, 172), (cx, cy + 44, 7, 105, 138)] + [(cx + dx, cy + dy, 6, 100, 135) for dx in (-18, 18) for dy in (-11, 25)]
+    T += [(cx + 48, cy - 6 + 9 * k, 3.6, 72, 100 + 2 * k) for k in range(4)] + [(cx - 48, cy - 6 + 9 * k, 3.6, 76, 107 + 2 * k) for k in range(4)]
+    for t in T: items.append((t[0] * VX + t[1] * VY - 0.5, lambda t=t: torre(*t, V)))
+def escalinata_axo(V, a, items, rojo=RED):
+    x, y = bloque(1, 1); cx = x + B / 2; n = 7
+    for k in range(n):
+        if (k + 1) / n > a + 1e-6: break
+        R = rect(cx - 32, cx + 32, y - 5 * (k + 1), y - 5 * k); z = 6.0 * (1 - k / n)
+        z0 = 21.0                                                        # se dibuja por encima de la manzana de enfrente, como en el original: lo que ocuparía la escalinata
+        items.append((-1e9 + k, lambda R=R, z=z, z0=z0: (caras(R, z0 + z - 1.6, z0 + z, V, rojo, lw=0.6), ax.add_patch(Polygon([V(p[0], p[1], z0 + z) for p in R], closed=True, fc=rojo, ec=INK, lw=0.6)))))
+def axo(cx, cy, s, a_esc=1.0, rojo_manzana=0.0):
+    V = lambda x, y, z: pr(x, y, z, cx, cy, s); items = []
+    for c in range(-1, 4):
+        for r in range(0, 5):
+            if (c, r) == (1, 1): continue
+            xb, yb = bloque(c, r); dep = (xb + B / 2) * VX + (yb + B / 2) * VY
+            top = PINK if (rojo_manzana > 0.5 and (c, r) == (1, 2)) else PAPER
+            items.append((dep, lambda c=c, r=r, top=top: manzana_axo(c, r, V, top=top)))
+    templo_axo(V, items)
+    if a_esc > 0: escalinata_axo(V, a_esc, items)
+    for _, fn in sorted(items, key=lambda it: -it[0]): fn()
+    return V
 # --- escenas
-def e_gancho(u, t): ensanche(); a = ss(u / 0.5); x, y = bloque(1, 1); ax.add_patch(Polygon(P(octo(x, y)), closed=True, fc='none', ec=RED, lw=3, ls='--', alpha=a, zorder=6))
+def e_gancho(u, t): axo(560 - 60 * ss(u), 520, 2.05 + 0.15 * ss(u), a_esc=1.0)
 def e_solar(u, t):
     ensanche(); x, y = bloque(1, 1); ax.add_patch(Polygon(P(octo(x, y)), closed=True, fc='none', ec=RED, lw=3, ls='--', zorder=6))
     txt(mx(x + B / 2), my(y) - 30, '1 BLOCK · 113 × 113 m', 15, color=RED, ha='center')
@@ -70,9 +126,11 @@ def escalinata(a, rojo=RED):
     ax.add_patch(Polygon(P([(x0, y0), (x1, y0), (x1, y1), (x0, y1)]), closed=True, fc=rojo, ec=INK, lw=1.2, zorder=6))
     for k in range(1, int(9 * a)): yy = y - k * 3.9; ax.plot([mx(x0), mx(x1)], [my(yy), my(yy)], color=PAPER, lw=1, zorder=7)
 def e_escalinata(u, t):
-    ensanche(); a = ss(u / 0.6); escalinata(a)
-    x, y = bloque(1, 1)
-    if a > 0.9: ax.annotate('', xy=(mx(x + B / 2 + 45), my(y - 35)), xytext=(mx(x + B / 2 + 45), my(y)), arrowprops=dict(arrowstyle='<->', color=RED, lw=1.5)); txt(mx(x + B / 2 + 52), my(y - 20), '35 m', 22, SG, RED)
+    a = ss((u - 0.1) / 0.6); V = axo(600, 380, 3.1, a_esc=a)
+    x, y = bloque(1, 1); cx = x + B / 2
+    if a > 0.95:
+        p0, p1 = V(cx + 40, y, 8), V(cx + 40, y - 35, 8); ax.annotate('', xy=p1, xytext=p0, arrowprops=dict(arrowstyle='<->', color=RED, lw=1.8), zorder=9)
+        txt((p0[0] + p1[0]) / 2 + 14, (p0[1] + p1[1]) / 2, '35 m', 26, SG, RED)
 def e_1974(u, t):
     ensanche(); escalinata(1, rojo=PINK); x, y = bloque(1, 2); a = ss(u / 0.5)
     ax.add_patch(Polygon(P([(x + 25, y + B - 20), (x + B - 25, y + B - 20), (x + B - 25, y + B), (x + 25, y + B)]), closed=True, fc=RED, ec=INK, lw=1.2, alpha=a, zorder=7))
@@ -111,9 +169,7 @@ def e_2026(u, t):
     txt(mx(x3 + B) + 12, my(y3 + B / 2), 'NO AVENUE TO THE DIAGONAL', 14, color=INK, alpha=c)
     txt(150, 190, 'SCHEMATIC · PRE-AGREEMENT OF JULY 2026', 13, color=GREY)
 def e_hoy(u, t):
-    ensanche(); escalinata(1); x, y = bloque(1, 2)
-    ax.add_patch(Polygon(P([(x + 20, y + B - 22), (x + B - 20, y + B - 22), (x + B - 20, y + B), (x + 20, y + B)]), closed=True, fc=RED, ec=INK, lw=1.2, zorder=7))
-    ax.add_patch(Polygon(P([(x + B / 2 - 22, y + 20), (x + B / 2 + 22, y + 20), (x + B / 2 + 22, y + B - 22), (x + B / 2 - 22, y + B - 22)]), closed=True, fc=RED, ec=INK, lw=1.2, zorder=7))
+    axo(540, 520, 2.05, a_esc=1.0, rojo_manzana=1.0)
     a = ss((u - 0.3) / 0.4); txt(540, 160, '?', 90 * a + 1, SG, RED, ha='center')
 SCN = [(0.0, 4.0, e_gancho), (4.0, 8.5, e_solar), (8.5, 13.0, e_gloria), (13.0, 18.0, e_estrella), (18.0, 22.0, e_cuatro), (22.0, 28.0, e_escalinata),
        (28.0, 33.0, e_1974), (33.0, 38.0, e_1976), (38.0, 42.0, e_1020), (42.0, 49.0, e_escala), (49.0, 56.0, e_2026), (56.0, 60.0, e_hoy)]
