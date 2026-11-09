@@ -1,0 +1,13 @@
+{"fps": 30, "paso": 0.2,
+ "textos": [[0, 4.2, "001 · FLORENCE, 1418", "A cathedral with a 45-metre hole in its roof."],
+  [4.2, 8.2, "001 · FLORENCE, 1418", "For decades, nobody knew how to close it."],
+  [8.2, 13.0, "02 · THE PROBLEM", "Domes needed a timber frame. This one was too big."],
+  [13.0, 18.6, "03 · THE GOLDSMITH", "A goldsmith, Filippo Brunelleschi, says he can. He won’t say how."],
+  [18.6, 23.8, "04 · THE IDEA", "Two domes in one: one carries the weight, one keeps out the rain."],
+  [23.8, 28.6, "05 · THE PROFILE", "Pointed, not round: a radius four-fifths of the span."],
+  [28.6, 33.8, "06 · THE TRICK", "Herringbone bricks: each ring holds itself up as it rises."],
+  [33.8, 38.8, "07 · THE BELT", "Chains of stone and wood bind it like the hoops of a barrel."],
+  [38.8, 43.8, "08 · 1420 – 1436", "Sixteen years. Four million bricks. 37,000 tonnes."],
+  [43.8, 49.0, "09 · TODAY", "Six centuries on, it is still the largest brick dome ever built."]],
+ "rojas": ["45-metre", "nobody", "timber", "goldsmith", "two", "four-fifths", "herringbone", "barrel", "37,000", "largest"],
+ "portada": {"fotograma": 1362, "n": "001", "t": "how do you close a 45-metre hole in a cathedral?", "m": ["brunelleschi’s dome · santa maria del fiore", "florence, IT · 1420 – 1436", "scale M"]}}
