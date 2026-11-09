@@ -1,1 +1,3 @@
-FALLO datos/brunelleschi/rel.json: The read operation timed out
+FALLO datos/brunelleschi/rel_a.json: HTTP Error 504: Gateway Timeout
+ok 280308 B  datos/brunelleschi/rel_b.json
+ok 280308 B  datos/brunelleschi/rel_c.json
