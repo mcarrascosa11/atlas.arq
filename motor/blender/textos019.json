@@ -1,0 +1,11 @@
+{"fps": 30, "paso": 0.2,
+ "textos": [[0, 5.0, "01 · SÄYNÄTSALO · FINLAND", "Un ayuntamiento para 3.000 vecinos, firmado por Aalto.", "A town hall for 3,000 people, by Alvar Aalto."],
+  [5.0, 10.0, "02 · 1949 · EL CONCURSO · THE COMPETITION", "En 1949, el año en que murió Aino, gana el concurso.", "In 1949, the year Aino died, he won the competition."],
+  [10.0, 15.0, "03 · EL PATIO · THE COURTYARD", "Levanta el patio con la tierra que saca de la ladera.", "He raised the courtyard with earth dug from the slope."],
+  [15.0, 19.5, "04 · LA ESCALERA · THE STAIRS", "Y se sube por una escalera de hierba.", "And you climb up a staircase of grass."],
+  [19.5, 24.5, "05 · EL PROGRAMA · THE PROGRAMME", "Tiendas, biblioteca y viviendas: un pueblo en un edificio.", "Shops, a library and homes: a village in one building."],
+  [24.5, 29.0, "06 · SIENA", "Aalto, a los concejales: «La sala de Siena mide 16 metros. Propongo 17».", "Aalto to the councillors: “Siena’s chamber is 16 metres high. I propose 17.”"],
+  [29.0, 35.0, "07 · 1993", "En 1993, Säynätsalo se fusiona con Jyväskylä: el ayuntamiento se queda sin pueblo.", "In 1993, Säynätsalo merged into Jyväskylä: the town hall lost its town."],
+  [35.0, 40.0, "08 · 2026 · UNESCO", "Desde julio de 2026 es Patrimonio Mundial.", "Since July 2026, it is a World Heritage Site."]],
+ "rojas": ["3.000", "1949", "tierra", "hierba", "pueblo", "17»", "1993", "mundial"],
+ "portada": {"fotograma": 1140, "n": "019", "t": "un ayuntamiento que se quedó sin pueblo", "t_en": "the town hall that lost its town", "m": ["säynätsalo · alvar aalto", "finlandia · 1949 – 1952", "escala M"]}}
