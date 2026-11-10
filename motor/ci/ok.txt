@@ -1,1 +1,1 @@
-video=001_brunelleschi_en duracion=49.000000 lufs=-14.0 md5=2b20464a70531dd0cfe564100a6d3a72 fecha=2026-11-09T22:43:46Z
+video=020_mercado_olavide duracion=50.000000 lufs=-14.0 md5=acfe762db5b0e65aea10b6bf2d5330ba fecha=2026-11-10T19:39:54Z
