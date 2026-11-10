@@ -1,0 +1,13 @@
+{"fps": 30, "paso": 0.2,
+ "textos": [[0, 4.5, "020 · MADRID, 1934 – 1974", "Why did Madrid blow up a market in 1974?"],
+  [4.5, 9.5, "01 · THE SQUARE", "In 1934, the Republic built a market that filled the whole Plaza de Olavide."],
+  [9.5, 14.5, "02 · THE PLAN", "An octagon inside an octagonal square, by Javier Ferrero, the city architect."],
+  [14.5, 19.5, "03 · THE SECTION", "Stepped roofs around a large central courtyard that ventilated the whole market."],
+  [19.5, 24.0, "04 · THE STRUCTURE", "Not one ornament: reinforced-concrete pilasters and deep beams."],
+  [24.0, 29.0, "05 · THE LOWER FLOOR", "And underneath, vehicles drove straight through it."],
+  [29.0, 34.0, "06 · 1974", "Forty years later, the City Council decided to demolish it. Neighbours protested."],
+  [34.0, 39.5, "07 · 2 NOVEMBER", "A controlled blast. In seconds, the market was gone."],
+  [39.5, 44.5, "08 · 1977", "In its place: gardens and a car park for 400 cars."],
+  [44.5, 50.0, "09 · TODAY", "Today the square is the heart of the neighbourhood. Better a square than a market?"]],
+ "rojas": ["blow", "whole", "octagon", "courtyard", "ornament", "vehicles", "demolish", "blast", "400", "better"],
+ "portada": {"fotograma": 60, "n": "020", "t": "why did madrid blow up a market in 1974?", "m": ["olavide market · javier ferrero", "madrid, ES · 1934 – 1974", "scale L"]}}

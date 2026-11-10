@@ -3,6 +3,8 @@
 // Entorno: OpenStreetMap actual (v020.json, lo prepara motor/scripts/v020_build.py). Marco: x este, z sur, y metros sobre la calle.
 import { THREE, W, H, PAPER, viewToWorld, fillMat, lineMat, segs, geomFrom, makeInkPass, prism } from './lib.js';
 const $ = (id) => document.getElementById(id);
+const EN = new URLSearchParams(location.search).get('lang') === 'en';
+const TX = (es, en) => EN ? en : es;
 const INK = '#1A1B20', RED = '#E2401C', PINK = '#F0B8A4', POCHE = '#2A2B30', D2R = Math.PI / 180;
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x)), ss = (x) => { x = clamp(x); return x * x * (3 - 2 * x); }, lerp = (a, b, u) => a + (b - a) * u, lerp3 = (a, b, u) => [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
 const C8 = Math.cos(Math.PI / 8), RA = (a) => a / C8;      // radio de vértice a partir de la apotema
@@ -38,7 +40,7 @@ export async function init() {
   const stoneM = solid('#F6F5F1'), glassM = solid('#DCE3E6', { side: 0.97, shade: 0.9 }), redM = solid(RED, { side: 1, shade: 0.9 }), pinkM = solid(PINK, { side: 0.96, shade: 0.9 });
   const pocheM = fillMat(RED, { hatch: 0, side: 1, shade: 1, top: 1, double: true, poche: RED }), greenM = solid('#DDE6D2', { side: 1, shade: 1 });
   const bldM = fillMat('#F6F5F1', { hatch: 0, side: 0.95, shade: 0.88, roof: '#EFDCD0', windows: 0.35 });
-  let TOW = null, FLOOR = null; const G = {}; const grp = (n) => { const g = new THREE.Group(); scene.add(g); G[n] = g; return g; };
+  let TOW = null, FLOOR = null, CAR = null; const G = {}; const grp = (n) => { const g = new THREE.Group(); scene.add(g); G[n] = g; return g; };
   const addL = (g, pos, mat, ro = 3) => { const l = segs(pos, mat, ro); l.frustumCulled = false; g.add(l); return l; };
   // ---------- entorno (OpenStreetMap) ----------
   { grp('ctx'); const A = mk(); const Eg = []; for (const b of D.ctx) prism(b.r, 0, b.h, 2.2, A.P, A.B, A.T, Eg, {}); G.ctx.add(mesh(A, bldM));
@@ -65,7 +67,18 @@ export async function init() {
     const P = (s, y, o) => [dx * s + nx * o, y, dz * s + nz * o], A = mk();
     const seg = (s0, s1, y0, y1) => { for (const o of [-3, 3]) {} quad(A, P(s0, y0, -3), P(s1, y1, -3), P(s1, y1, 3), P(s0, y0, 3), [0, 1, 0]); };
     seg(-62, -42, 0, -4.5); seg(-42, 42, -4.5, -4.5); seg(42, 62, -4.5, 0);
-    G.basement.add(mesh(A, redM)); const B = mk(); octRing(B, RA(13), RA(34), -5.2, -0.3); const bm = mesh(B, pinkM); G.basement.add(bm); }
+    G.basement.add(mesh(A, redM)); }
+  // vehículo que cruza (furgoneta esquemática) y el terreno cortado a lo largo del paso
+  { grp('car'); const A = mk(); box(A, -2.3, 2.3, 0.4, 2.4, -1.0, 1.0); box(A, 0.9, 2.3, 2.4, 3.1, -1.0, 1.0); const g = new THREE.Group(); g.add(mesh(A, stoneM)); G.car.add(g); CAR = g;
+    const L = []; for (const x of [-1.5, 1.5]) for (let i = 0; i < 12; i++) { const a0 = i * Math.PI / 6, a1 = (i + 1) * Math.PI / 6; L.push(x + 0.45 * Math.cos(a0), 0.45 + 0.45 * Math.sin(a0), 1.05, x + 0.45 * Math.cos(a1), 0.45 + 0.45 * Math.sin(a1), 1.05); } addL(g, L, lineMat(INK, 2.4)); }
+  { grp('earth'); const am = ang(2) + Math.PI / 8, dx = Math.cos(am), dz = Math.sin(am), nx = -dz, nz = dx, o = 3.4, P = (s, y) => [dx * s + nx * o, y, dz * s + nz * o];
+    const A = mk(-1); const prof = [[-90, 0], [-62, 0], [-42, -4.5], [42, -4.5], [62, 0], [90, 0]]; for (let i = 0; i + 1 < prof.length; i++) { const [s0, y0] = prof[i], [s1, y1] = prof[i + 1]; quad(A, P(s0, y0 - 0.02), P(s1, y1 - 0.02), P(s1, -12), P(s0, -12), [-nx, 0, -nz]); }
+    const em = mesh(A, solid('#E6E2D8', { side: 1, shade: 1 })); em.userData.noInk = true; G.earth.add(em);
+    const L = []; for (let i = 0; i + 1 < prof.length; i++) L.push(...P(prof[i][0], prof[i][1]), ...P(prof[i + 1][0], prof[i + 1][1])); addL(G.earth, L, lineMat(INK, 2.6), 6); }
+  { grp('lower'); const am = ang(2) + Math.PI / 8, dx = Math.cos(am), dz = Math.sin(am), nx = -dz, nz = dx, P = (s, o, y = -4.4) => [dx * s + nx * o, y, dz * s + nz * o];
+    const W2 = mk(); octRing(W2, RA(34) - 0.5, RA(34), -4.6, -4.4); octRing(W2, RA(13) - 0.4, RA(13), -4.6, -4.4); G.lower.add(mesh(W2, solid('#E9E6DE', { side: 1, shade: 1 })));
+    const R = mk(); quad(R, P(-66, -3), P(66, -3), P(66, 3), P(-66, 3), [0, 1, 0]); R.t = 0; const rm = mesh(R, solid(RED, { side: 1, shade: 1 })); rm.userData.noInk = true; G.lower.add(rm);
+    addL(G.lower, [...octLine(RA(34), -4.3), ...octLine(RA(13), -4.3), ...P(-66, -3, -4.3), ...P(66, -3, -4.3), ...P(-66, 3, -4.3), ...P(66, 3, -4.3)], lineMat(INK, 2.2), 6); }
   // ---------- 1977: aparcamiento bajo la plaza ----------
   { grp('parking'); const A = mk(); octRing(A, 0, RA(40), -6.5, -0.6); G.parking.add(mesh(A, solid('#F6DDD3', { side: 0.97, shade: 0.94 }))); }
   // jardines y árboles de la plaza de hoy
@@ -102,23 +115,28 @@ export async function init() {
     // 4 · escalonado hacia el patio: sección
     [14.5, 19.5, (u) => { show('plaza', ...MK); FLOOR.visible = false; renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)]; const k = ss(u); cam([0, 6, 0], lerp(8, 14, k), 16, lerp(40, 36, k), 140);
       const a = ss((u - 0.25) / 0.25); for (const sg of [-1, 1]) { const p0 = proj([sg * 19, 2.2, 0]), p1 = proj([sg * 8, 4.5, 0]); arrow(p0[0], p0[1], p1[0], p1[1], a); } const q0 = proj([0, 5, 0]), q1 = proj([0, 18, 0]); arrow(q0[0], q0[1], q1[0], q1[1], ss((u - 0.45) / 0.2));
-      text(q1[0] + 20, q1[1] + 10, 'AIRE', 'labr', 'start', ss((u - 0.5) / 0.2)); text(540, 1560, 'SECCIÓN · ESQUEMA', 'labs', 'middle', 1); }],
+      text(q1[0] + 20, q1[1] + 10, TX('AIRE', 'AIR'), 'labr', 'start', ss((u - 0.5) / 0.2)); text(540, 1560, TX('SECCIÓN · ESQUEMA', 'SECTION · SCHEMATIC'), 'labs', 'middle', 1); }],
     // 5 · sin un adorno: hormigón, vuelos
     [19.5, 24, (u) => { show('plaza', ...MK); const k = ss(u); cam([10, 5, 8], lerp(44, 36, k), 16, 34, 170); }],
-    // 6 · por debajo lo cruzaban los vehículos
-    [24, 29, (u) => { show('plaza', ...MK, 'basement'); const am = ang(2) + Math.PI / 8, n = new THREE.Vector3(Math.sin(am), 0, -Math.cos(am)); renderer.clippingPlanes = [new THREE.Plane(n, 0)]; cam([0, 0, 0], -am / D2R + 90 + 28, 20, 78, 170);
-      const a = ss((u - 0.2) / 0.2), p = proj([Math.cos(am) * -52, -2.5, Math.sin(am) * -52]), q = proj([Math.cos(am) * 52, -2.5, Math.sin(am) * 52]); text(p[0], p[1] + 46, 'ENTRADA', 'labr', 'middle', a); text(q[0], q[1] + 46, 'ENTRADA', 'labr', 'middle', a); text(540, 1560, 'PLANTA INFERIOR · PASO DE VEHÍCULOS (ESQUEMA)', 'labs', 'middle', 1); }],
+    // 6 · por debajo lo cruzaban los vehículos: la planta inferior vista desde arriba, con el paso de calle a calle y una furgoneta que lo recorre
+    [24, 29, (u) => { show('plaza', 'lower', 'car'); const am = ang(2) + Math.PI / 8, dx = Math.cos(am), dz = Math.sin(am), nx = -dz, nz = dx;
+      cam([0, -4.4, 0], Math.atan2(-dx, -dz) / D2R, 89.9, 62, 130);
+      const sv = lerp(-70, 70, ss(u)); CAR.position.set(dx * sv, -4.0, dz * sv); CAR.rotation.set(0, -am, 0);
+      const pa = proj([dx * -44, -4.4, dz * -44]), pb = proj([dx * 44, -4.4, dz * 44]), pl = proj([nx * -22, -4.4, nz * -22]), pr = proj([nx * 22, -4.4, nz * 22]);
+      const a = ss((u - 0.1) / 0.15); text(pa[0] + 60, pa[1] + 10, TX('ENTRADA', 'ENTRANCE'), 'labr', 'start', a); text(pb[0] + 60, pb[1] + 10, TX('ENTRADA', 'ENTRANCE'), 'labr', 'start', a);
+      text(pl[0], pl[1], TX('ALMACENES', 'STORAGE'), 'lab', 'middle', 1); text(pr[0], pr[1], TX('CÁMARAS', 'COLD'), 'lab', 'middle', 1); text(pr[0], pr[1] + 32, TX('FRIGORÍFICAS', 'STORES'), 'lab', 'middle', 1);
+      text(540, 1600, TX('PLANTA INFERIOR · SEGÚN EL PLANO DE 1931 (ESQUEMA)', 'LOWER FLOOR · AFTER THE 1931 PLAN (SCHEMATIC)'), 'labs', 'middle', 1); }],
     // 7 · 1974: decide derribarlo
-    [29, 34, (u) => { show(...BASE, ...MK); cam([0, 6, 0], 30, 30, 100, 160); const a = ss((u - 0.3) / 0.2), p = proj([0, 14, 0]); text(p[0], p[1] - 150, '«MODELO OBSOLETO»', 'lab', 'middle', a); text(p[0], p[1] - 110, '«RECUPERARLO» · COAM', 'labr', 'middle', ss((u - 0.5) / 0.2)); }],
+    [29, 34, (u) => { show(...BASE, ...MK); cam([0, 6, 0], 30, 30, 100, 160); const a = ss((u - 0.3) / 0.2), p = proj([0, 14, 0]); text(p[0], p[1] - 150, TX('«MODELO OBSOLETO»', '«AN OBSOLETE MODEL»'), 'lab', 'middle', a); text(p[0], p[1] - 110, TX('«RECUPERARLO» · COAM', '«SAVE IT» · MADRID ARCHITECTS’ ASSOCIATION'), 'labr', 'middle', ss((u - 0.5) / 0.2)); }],
     // 8 · 2 de noviembre de 1974: voladura
     [34, 39.5, (u) => { show(...BASE, ...MK); cam([0, 6, 0], 30, 30, 100, 160);
       const t0 = 0.12; G.tier.forEach((g, i) => { const k = ss((u - t0 - 0.05 * (3 - i)) / 0.3); g.scale.set(1, Math.max(0.03, 1 - 0.97 * k), 1); g.rotation.set(0.04 * k * (i % 2 ? 1 : -1), 0, 0.03 * k); });
       TOW.scale.set(1, Math.max(0.03, 1 - 0.97 * ss((u - t0) / 0.28)), 1);
       const c = proj([0, 4, 0]); for (let i = 0; i < 14; i++) { const a = i * 2.39, d = 60 + 26 * (i % 5), e = ss((u - 0.1 - 0.01 * i) / 0.4); puff(c[0] + Math.cos(a) * d * (0.4 + e), c[1] - 30 * e - Math.abs(Math.sin(a)) * d * 0.5 * e, 30 + 55 * e, 0.85 * e * (1 - ss((u - 0.75) / 0.25))); } }],
     // 9 · 1977: jardines y aparcamiento
-    [39.5, 44.5, (u) => { show(...BASE, 'garden', 'parking', 'ghost'); renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)]; cam([0, 0, 0], 22, 30, 74, 170); const a = ss((u - 0.3) / 0.2), p = proj([8, -4, 0]); text(p[0], p[1] + 64, 'APARCAMIENTO · 400 PLAZAS', 'labr', 'middle', a); }],
+    [39.5, 44.5, (u) => { show(...BASE, 'garden', 'parking', 'ghost'); renderer.clippingPlanes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)]; cam([0, 0, 0], 22, 30, 74, 170); const a = ss((u - 0.3) / 0.2), p = proj([8, -4, 0]); text(p[0], p[1] + 64, TX('APARCAMIENTO · 400 PLAZAS', 'CAR PARK · 400 SPACES'), 'labr', 'middle', a); }],
     // 10 · hoy
-    [44.5, 50, (u) => { show(...BASE, 'garden', 'ghost'); const k = ss(u); cam([0, 6, 0], lerp(22, 34, k), lerp(32, 36, k), lerp(95, 120, k), 160); const p = proj(corner(RA(34), 0, 1)); text(p[0] + 10, p[1] + 44, 'MERCADO DE OLAVIDE · 1934 – 1974', 'labr', 'start', ss((u - 0.25) / 0.2)); }],
+    [44.5, 50, (u) => { show(...BASE, 'garden', 'ghost'); const k = ss(u); cam([0, 6, 0], lerp(22, 34, k), lerp(32, 36, k), lerp(95, 120, k), 160); const p = proj(corner(RA(34), 0, 1)); text(p[0] + 10, p[1] + 44, TX('MERCADO DE OLAVIDE · 1934 – 1974', 'OLAVIDE MARKET · 1934 – 1974'), 'labr', 'start', ss((u - 0.25) / 0.2)); }],
   ];
   const END = SC[SC.length - 1][1];
   window.renderAt = (t) => { t = clamp(t, 0, END - 1e-4); SV = ''; renderer.clippingPlanes = [];
