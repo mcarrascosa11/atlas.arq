@@ -1,0 +1,13 @@
+{"fps": 30, "paso": 0.2,
+ "textos": [[0, 4.5, "020 · MADRID, 1934 – 1974", "¿Por qué Madrid dinamitó un mercado en 1974?"],
+  [4.5, 9.5, "01 · LA PLAZA", "En 1934, la República levanta un mercado que ocupa la plaza de Olavide entera."],
+  [9.5, 14.5, "02 · LA PLANTA", "Un octógono dentro de una plaza octogonal, de Javier Ferrero, arquitecto municipal."],
+  [14.5, 19.5, "03 · LA SECCIÓN", "Cubiertas escalonadas hacia un gran patio central que ventila todo el mercado."],
+  [19.5, 24.0, "04 · LA ESTRUCTURA", "Ni un adorno: pilastras y vigas de gran canto de hormigón armado."],
+  [24.0, 29.0, "05 · LA PLANTA INFERIOR", "Y por debajo lo atravesaban los vehículos."],
+  [29.0, 34.0, "06 · 1974", "Cuarenta años después, el Ayuntamiento decide derribarlo. Los vecinos protestan."],
+  [34.0, 39.5, "07 · 2 DE NOVIEMBRE", "Voladura controlada. En segundos, el mercado desaparece."],
+  [39.5, 44.5, "08 · 1977", "En su lugar: jardines y un aparcamiento para 400 coches."],
+  [44.5, 50.0, "09 · HOY", "La plaza es hoy el corazón del barrio. ¿Mejor plaza que mercado?"]],
+ "rojas": ["dinamitó", "entera", "octógono", "patio", "adorno", "vehículos", "derribarlo", "voladura", "400", "¿mejor"],
+ "portada": {"fotograma": 60, "n": "020", "t": "¿por qué madrid dinamitó un mercado en 1974?", "m": ["mercado de olavide · javier ferrero", "madrid, ES · 1934 – 1974", "escala L"]}}
