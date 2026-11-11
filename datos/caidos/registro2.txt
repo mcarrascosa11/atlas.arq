@@ -1,0 +1,5 @@
+FALLO datos/caidos/nombres.json: HTTP Error 502: Bad Gateway
+ok 59931 B  datos/caidos/bld.json
+ok 320369 B  datos/caidos/calles.json
+ok 57896 B  datos/caidos/bld_b.json
+FALLO datos/caidos/calles_b.json: The read operation timed out
