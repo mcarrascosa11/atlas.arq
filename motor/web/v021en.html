@@ -1,0 +1,27 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<style>
+@font-face{font-family:'SG';src:url(fonts/sg700.woff2) format('woff2');font-weight:700}
+@font-face{font-family:'SM';src:url(fonts/sm400.woff2) format('woff2')}
+@font-face{font-family:'SM';src:url(fonts/sm400ext.woff2) format('woff2');unicode-range:U+0100-024F}
+html,body{margin:0;background:#F2F1EC;width:1080px;height:1920px;overflow:hidden}
+#stage{position:absolute;left:0;top:0;width:1080px;height:1920px}
+#ov{position:absolute;left:0;top:0;width:1080px;height:1920px}
+.lab{font:400 26px 'SM';fill:#1A1B20;paint-order:stroke;stroke:#F2F1EC;stroke-width:7px;letter-spacing:.04em}
+.labr{font:400 26px 'SM';fill:#E2401C;paint-order:stroke;stroke:#F2F1EC;stroke-width:7px;letter-spacing:.04em}
+.labs{font:400 21px 'SM';fill:#8C897F;paint-order:stroke;stroke:#F2F1EC;stroke-width:6px;letter-spacing:.04em}
+.dim{font:700 44px 'SG';fill:#E2401C;paint-order:stroke;stroke:#F2F1EC;stroke-width:9px}
+</style>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/","three-bvh-csg":"./node_modules/three-bvh-csg/src/index.js","three-mesh-bvh":"./node_modules/three-mesh-bvh/src/index.js"}}</script>
+</head><body>
+<div id="stage"></div>
+<svg id="ov" viewBox="0 0 1080 1920"></svg>
+<script type="module">
+import { init } from "./v021.js";
+// versión en inglés: traduce los rótulos del dibujo después de cada fotograma (los títulos los pone post019.py)
+const MAP = [["ARQUERÍAS · CATALOGADAS CON GRADO 3", "ARCADES · LISTED, GRADE 3"], ["CRIPTA · 1961 – 2016", "CRYPT · 1961 – 2016"], ["21 PROPUESTAS · 2 FINALISTAS", "21 ENTRIES · 2 FINALISTS"],
+  ["HARRIAK HITZ · SEGÚN SU MEMORIA (ESQUEMA)", "HARRIAK HITZ · AFTER ITS PROJECT REPORT (SCHEMATIC)"], ["HUECO CIRCULAR", "CIRCULAR OPENING"],
+  ["ITZALETIK ARGIRA · SEGÚN SU MEMORIA (ESQUEMA)", "ITZALETIK ARGIRA · AFTER ITS PROJECT REPORT (SCHEMATIC)"], ["CONSULTA VECINAL · JUNIO DE 2026", "PUBLIC CONSULTATION · JUNE 2026"]];
+document.fonts.ready.then(async () => { await init(); const r = window.renderAt; window.renderAt = (t) => { r(t); const ov = document.getElementById('ov'); let s = ov.innerHTML; for (const [a, b] of MAP) s = s.split(a).join(b); ov.innerHTML = s; }; }).catch(e => { window.ERR = String(e.stack || e); });
+window.addEventListener('error', e => { window.ERR = String(e.error && e.error.stack || e.message); });
+</script>
+</body></html>

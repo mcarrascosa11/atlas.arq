@@ -1,0 +1,18 @@
+{
+ "fps": 30,
+ "paso": 0.2,
+ "textos": [
+  [0, 4.5, "021 · PAMPLONA, 1942 – 2026", "What do you do with a monument to Franco’s regime?"],
+  [4.5, 9.5, "01 · THE MONUMENT", "Designed by Víctor Eusa and José Yárnoz in 1942. Opened in 1961."],
+  [9.5, 14.0, "02 · THE PLAN", "A Greek cross and a great dome that closes the Avenida de Carlos III."],
+  [14.0, 18.5, "03 · THE ARCADES", "Two arcades embrace the square."],
+  [18.5, 23.0, "04 · THE CRYPT", "Coup generals Mola and Sanjurjo lay in its crypt from 1961 to 2016."],
+  [23.0, 27.5, "05 · THE COMPETITION", "Now, a competition to turn it into a memorial museum: 21 entries."],
+  [27.5, 33.5, "06 · HARRIAK HITZ", "One keeps the arcades, swaps the dome’s slate for stone and links it all with a platform."],
+  [33.5, 39.5, "07 · ITZALETIK ARGIRA", "The other demolishes the arcades, clads the dome in glass and crowns it with a viewpoint."],
+  [39.5, 44.5, "08 · THE VOTE", "Residents preferred the second. The winner is still undecided."],
+  [44.5, 50.0, "09 · AND NOW?", "Demolish, preserve or transform?"]
+ ],
+ "rojas": ["regime?", "1942.", "dome", "arcades", "crypt", "museum:", "keeps", "demolishes", "second.", "transform?"],
+ "portada": {"fotograma": 60, "n": "021", "t": "what do you do with a monument to franco’s regime?", "m": ["monument to the fallen · eusa and yárnoz", "pamplona, ES · 1942 – 2026", "scale L"]}
+}
