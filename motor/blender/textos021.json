@@ -1,0 +1,18 @@
+{
+ "fps": 30,
+ "paso": 0.2,
+ "textos": [
+  [0, 4.5, "021 · PAMPLONA, 1942 – 2026", "¿Qué se hace con un monumento franquista?"],
+  [4.5, 9.5, "01 · EL MONUMENTO", "Víctor Eusa y José Yárnoz lo proyectan en 1942. Se inaugura en 1961."],
+  [9.5, 14.0, "02 · LA PLANTA", "Cruz griega y una gran cúpula que cierra la avenida de Carlos III."],
+  [14.0, 18.5, "03 · LAS ARQUERÍAS", "Dos arquerías abrazan la plaza."],
+  [18.5, 23.0, "04 · LA CRIPTA", "En la cripta estuvieron enterrados Mola y Sanjurjo, de 1961 a 2016."],
+  [23.0, 27.5, "05 · EL CONCURSO", "Hoy, un concurso para convertirlo en museo-memorial: 21 propuestas."],
+  [27.5, 33.5, "06 · HARRIAK HITZ", "Una conserva las arquerías, cambia la pizarra de la cúpula por piedra y lo une todo con una plataforma."],
+  [33.5, 39.5, "07 · ITZALETIK ARGIRA", "Otra derriba las arquerías, viste la cúpula de vidrio y la corona con un mirador."],
+  [39.5, 44.5, "08 · LA CONSULTA", "La consulta vecinal prefiere la segunda. El ganador aún no está decidido."],
+  [44.5, 50.0, "09 · ¿Y AHORA?", "¿Derribar, conservar o transformar?"]
+ ],
+ "rojas": ["franquista?", "1942.", "cúpula", "arquerías", "cripta", "museo-memorial:", "conserva", "derriba", "segunda.", "transformar?"],
+ "portada": {"fotograma": 60, "n": "021", "t": "¿qué se hace con un monumento franquista?", "m": ["monumento a los caídos · eusa y yárnoz", "pamplona, ES · 1942 – 2026", "escala L"]}
+}
