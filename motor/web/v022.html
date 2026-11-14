@@ -17,7 +17,8 @@ html,body{margin:0;background:#F2F1EC;width:1080px;height:1920px;overflow:hidden
 <svg id="ov" viewBox="0 0 1080 1920"></svg>
 <script type="module">
 import { init } from "./v022.js";
-document.fonts.ready.then(() => init()).catch(e => { window.ERR = String(e.stack || e); });
+// el gancho (0 – 4,5 s) abre con la vista aérea del Karl-Marx-Hof en rojo, la misma de la última escena
+document.fonts.ready.then(async () => { await init(); const r = window.renderAt; window.renderAt = (t) => { r(t < 4.5 ? 50.5 + t : t); document.querySelectorAll('#ov text').forEach(e => { if (e.textContent.includes('MISMA ESCALA') || e.textContent.includes('SAME SCALE')) { e.setAttribute('text-anchor', 'start'); e.setAttribute('x', '48'); } }); }; }).catch(e => { window.ERR = String(e.stack || e); });
 window.addEventListener('error', e => { window.ERR = String(e.error && e.error.stack || e.message); });
 </script>
 </body></html>

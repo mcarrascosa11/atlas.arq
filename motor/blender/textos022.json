@@ -2,19 +2,101 @@
  "fps": 30,
  "paso": 0.2,
  "textos": [
-  [0, 4.5, "022 · VIENA, 1869 – 1930", "¿Y si la vivienda obrera de Viena copió a los palacios de la burguesía?"],
-  [4.5, 9.0, "01 · LA VIENA AZUL", "1869: en el Ring, la burguesía liberal levanta sus palacios de pisos de alquiler."],
-  [9.0, 13.5, "02 · EL PALAIS HANSEN", "Theophil Hansen: 100 × 50 metros en ocho módulos de 25, cada uno con su patio."],
-  [13.5, 18.0, "03 · EL TRUCO", "Los patios se juntan y dejan de ser de luces. Una sola fachada para varios propietarios."],
-  [18.0, 22.5, "04 · LA VIENA ROJA", "1919: los socialdemócratas ganan Viena. Deciden 25.000 viviendas en 1923 y 35.000 en 1927."],
-  [22.5, 27.0, "05 · EL KARL-MARX-HOF", "Karl Ehn (1927 – 1930): 1.382 viviendas en más de un kilómetro."],
-  [27.0, 31.5, "06 · EL SOLAR", "Solo ocupa el 18 % del solar: el resto son patios con lavanderías, guarderías y biblioteca."],
-  [31.5, 36.5, "07 · LA HERENCIA", "El mismo tipo que el Palais Hansen: una fachada monumental para muchas viviendas y grandes patios."],
-  [36.5, 41.0, "08 · LA ESCUELA", "Ehn y su generación se formaron con Otto Wagner, en el urbanismo de la Viena imperial."],
-  [41.0, 45.5, "09 · 1934", "En febrero de 1934, el ejército bombardea el Hof con artillería."],
-  [45.5, 50.5, "10 · HOY", "Viena tiene 220.000 pisos municipales y otros 200.000 de cooperativas subvencionadas."],
-  [50.5, 55.0, "11 · ¿REVOLUCIÓN?", "¿Revolución o evolución?"]
+  [
+   0,
+   4.5,
+   "022 · VIENA, 1869 – 2026",
+   "Más de la mitad de los vieneses vive en vivienda subvencionada. ¿Y en tu ciudad?"
+  ],
+  [
+   4.5,
+   9.0,
+   "01 · LA VIENA AZUL",
+   "1869: en el Ring, la burguesía liberal levanta sus palacios de pisos de alquiler."
+  ],
+  [
+   9.0,
+   13.5,
+   "02 · EL PALAIS HANSEN",
+   "Theophil Hansen: 100 × 50 metros en ocho módulos de 25, cada uno con su patio."
+  ],
+  [
+   13.5,
+   18.0,
+   "03 · EL TRUCO",
+   "Los patios se juntan y dejan de ser de luces. Una sola fachada para varios propietarios."
+  ],
+  [
+   18.0,
+   22.5,
+   "04 · LA VIENA ROJA",
+   "1919: los socialdemócratas ganan Viena. Deciden 25.000 viviendas en 1923 y 35.000 en 1927."
+  ],
+  [
+   22.5,
+   27.0,
+   "05 · EL KARL-MARX-HOF",
+   "Karl Ehn (1927 – 1930): 1.382 viviendas en más de un kilómetro."
+  ],
+  [
+   27.0,
+   31.5,
+   "06 · EL SOLAR",
+   "Solo ocupa el 18 % del solar: el resto son patios con lavanderías, guarderías y biblioteca."
+  ],
+  [
+   31.5,
+   36.5,
+   "07 · LA HERENCIA",
+   "Para la arquitecta Carmen Díez Medina, el Palais Hansen sería el antecesor directo de estos «palacios para el pueblo»."
+  ],
+  [
+   36.5,
+   41.0,
+   "08 · LA ESCUELA",
+   "Ehn y su generación se formaron con Otto Wagner, en el urbanismo de la Viena imperial."
+  ],
+  [
+   41.0,
+   45.5,
+   "09 · 1934",
+   "En febrero de 1934, el ejército bombardea el Hof con artillería."
+  ],
+  [
+   45.5,
+   50.5,
+   "10 · HOY",
+   "Viena tiene 220.000 pisos municipales y otros 200.000 de cooperativas subvencionadas."
+  ],
+  [
+   50.5,
+   55.0,
+   "11 · ¿REVOLUCIÓN?",
+   "¿Revolución o evolución?"
+  ]
  ],
- "rojas": ["copió", "azul", "ocho", "juntan", "roja.", "kilómetro.", "18", "tipo", "wagner,", "artillería.", "220.000", "evolución?"],
- "portada": {"fotograma": 60, "n": "022", "t": "viena azul, viena roja", "m": ["palais hansen · karl-marx-hof", "viena, AT · 1869 – 1930", "escala XL"]}
+ "rojas": [
+  "mitad",
+  "azul",
+  "ocho",
+  "juntan",
+  "roja.",
+  "kilómetro.",
+  "18",
+  "antecesor",
+  "wagner,",
+  "artillería.",
+  "220.000",
+  "evolución?"
+ ],
+ "portada": {
+  "fotograma": 60,
+  "n": "022",
+  "t": "viena azul, viena roja",
+  "m": [
+   "palais hansen · karl-marx-hof",
+   "viena, AT · 1869 – 1930",
+   "escala XL"
+  ]
+ }
 }
