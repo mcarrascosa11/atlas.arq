@@ -1,0 +1,3 @@
+ok 220194 B  datos/viena/ring_b.json
+ok 831221 B  datos/viena/ring_c.json
+FALLO datos/viena/ring_b2.json: The read operation timed out
