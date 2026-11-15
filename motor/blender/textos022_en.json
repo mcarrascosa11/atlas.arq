@@ -1,0 +1,102 @@
+{
+ "fps": 30,
+ "paso": 0.2,
+ "textos": [
+  [
+   0,
+   4.5,
+   "022 · VIENNA, 1869 – 2026",
+   "More than half of Vienna lives in subsidised housing. What about your city?"
+  ],
+  [
+   4.5,
+   9.0,
+   "01 · BLUE VIENNA",
+   "1869: on the Ring, the liberal bourgeoisie builds its palaces of rental flats."
+  ],
+  [
+   9.0,
+   13.5,
+   "02 · THE PALAIS HANSEN",
+   "Theophil Hansen: 100 × 50 metres in eight modules of 25, each with its own courtyard."
+  ],
+  [
+   13.5,
+   18.0,
+   "03 · THE TRICK",
+   "The courtyards merge and stop being light wells. One façade for several owners."
+  ],
+  [
+   18.0,
+   22.5,
+   "04 · RED VIENNA",
+   "1919: the Social Democrats win Vienna. They decide on 25,000 homes in 1923 and 35,000 in 1927."
+  ],
+  [
+   22.5,
+   27.0,
+   "05 · THE KARL-MARX-HOF",
+   "Karl Ehn (1927 – 1930): 1,382 homes in more than a kilometre."
+  ],
+  [
+   27.0,
+   31.5,
+   "06 · THE SITE",
+   "It covers only 18% of the site: the rest is courtyards with laundries, kindergartens and a library."
+  ],
+  [
+   31.5,
+   36.5,
+   "07 · THE LEGACY",
+   "For architect Carmen Díez Medina, the Palais Hansen would be the direct ancestor of these “palaces for the people”."
+  ],
+  [
+   36.5,
+   41.0,
+   "08 · THE SCHOOL",
+   "Ehn and his generation trained under Otto Wagner, in the urbanism of imperial Vienna."
+  ],
+  [
+   41.0,
+   45.5,
+   "09 · 1934",
+   "In February 1934, the army shells the Hof with artillery."
+  ],
+  [
+   45.5,
+   50.5,
+   "10 · TODAY",
+   "Vienna has 220,000 municipal flats and another 200,000 subsidised co-op flats."
+  ],
+  [
+   50.5,
+   55.0,
+   "11 · REVOLUTION?",
+   "Revolution or evolution?"
+  ]
+ ],
+ "rojas": [
+  "half",
+  "ring,",
+  "eight",
+  "merge",
+  "democrats",
+  "kilometre.",
+  "18%",
+  "ancestor",
+  "wagner,",
+  "artillery.",
+  "220,000",
+  "evolution?"
+ ],
+ "portada": {
+  "fotograma": 60,
+  "n": "022",
+  "t": "blue vienna, red vienna",
+  "m": [
+   "palais hansen · karl-marx-hof",
+   "vienna, AT · 1869 – 1930",
+   "scale XL"
+  ]
+ }
+}
