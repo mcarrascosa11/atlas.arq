@@ -1,0 +1,17 @@
+{
+ "fps": 30,
+ "paso": 0.2,
+ "textos": [
+  [0, 4.5, "023 · BARCELONA, 1859 – 2026", "¿Por qué las manzanas de Barcelona tienen las esquinas cortadas?"],
+  [4.5, 9.0, "01 · EL CHAFLÁN", "Para ver venir los carruajes: con la esquina a 45°, el cruce se ve antes."],
+  [9.0, 13.5, "02 · 1859", "Ildefons Cerdà dibuja el Ensanche: manzanas de 113 metros y calles de 20."],
+  [13.5, 18.0, "03 · LA PLAZA", "Cuatro chaflanes forman una pequeña plaza en cada cruce."],
+  [18.0, 22.5, "04 · LA IDEA", "Construir solo dos o tres lados, de 16 metros de alto, y dejar un jardín dentro."],
+  [22.5, 27.0, "05 · LA REALIDAD", "Los promotores cerraron las manzanas, subieron alturas y llenaron los patios."],
+  [27.0, 31.5, "06 · HOY", "De unas 423 manzanas del distrito, solo 86 tienen el interior libre."],
+  [31.5, 36.0, "07 · LA RECUPERACIÓN", "Desde 1986, el Eixample recupera patios de manzana como jardines públicos."],
+  [36.0, 40.5, "08 · ¿Y TU MANZANA?", "¿Y si se abriera el patio de la tuya?"]
+ ],
+ "rojas": ["esquinas", "45°,", "113", "plaza", "jardín", "llenaron", "86", "1986,", "patio"],
+ "portada": {"fotograma": 60, "n": "023", "t": "¿por qué barcelona tiene las esquinas cortadas?", "m": ["eixample · ildefons cerdà", "barcelona, ES · 1859 – 2026", "escala XL"]}
+}
