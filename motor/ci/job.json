@@ -1,1 +1,1 @@
-{"engine": "python", "scene": "motor/py/cerda_video.py", "frames": 1215, "fps": 30, "data": "motor/ci/datos_v023.sh", "music": "motor/blender/music023.py", "texts": "motor/blender/textos023.json", "post": "motor/blender/post019.py", "out": "023_chaflan_cerda", "mgaudio": true, "run": 63}
+{"engine": "python", "scene": "motor/py/cerda_b_video.py", "frames": 1080, "fps": 30, "data": "motor/ci/datos_v023.sh", "music": "motor/blender/music023b.py", "texts": "motor/blender/textos023b.json", "post": "motor/blender/post019.py", "out": "023b_cerda_jardin", "mgaudio": true, "run": 64}
