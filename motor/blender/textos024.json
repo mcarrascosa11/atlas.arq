@@ -1,0 +1,17 @@
+{
+ "fps": 30,
+ "paso": 0.2,
+ "textos": [
+  [0, 4.5, "024 · LA CIUDAD DE LOS 15 MINUTOS", "¿El gobierno te va a obligar a no salir de tu barrio?"],
+  [4.5, 9.0, "01 · LA PROPUESTA", "Esto es la ciudad de los 15 minutos: tener lo básico a un paseo de casa."],
+  [9.0, 13.5, "02 · LO BÁSICO", "Vivir, trabajar, comprar, cuidarse, aprender y disfrutar a 15 minutos andando o en bici."],
+  [13.5, 18.0, "03 · EL ORIGEN", "La propone en 2016 el urbanista Carlos Moreno. París la hace bandera en 2020."],
+  [18.0, 22.5, "04 · EL BULO", "En 2023 se hace viral en Oxford: mezclan esta idea con unos filtros de tráfico."],
+  [22.5, 27.0, "05 · LOS FILTROS", "Cámaras que limitan el paso de coches en seis calles. Andando, en bici o en bus se pasa siempre."],
+  [27.0, 31.5, "06 · SIN MUROS", "Ninguna barrera física: en coche se llega a cualquier sitio, aunque sea dando la vuelta."],
+  [31.5, 36.0, "07 · NADA NUEVO", "En 1929, Clarence Perry ya dibujó barrios con el colegio en el centro y todo a 400 metros."],
+  [36.0, 40.5, "08 · ¿Y TU BARRIO?", "¿Qué tienes a 15 minutos de casa?"]
+ ],
+ "rojas": ["obligar", "básico", "15", "2016", "bulo", "siempre.", "barrera", "1929,", "15"],
+ "portada": {"fotograma": 60, "n": "024", "t": "¿el gobierno te va a obligar a no salir de tu barrio?", "m": ["la ciudad de los 15 minutos", "ciudad esquemática · 1929 – 2026", "escala XL"]}
+}
