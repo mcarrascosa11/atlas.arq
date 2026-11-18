@@ -1,1 +1,1 @@
-video=023b_cerda_jardin duracion=36.000000 lufs=-14.0 md5=5782072bf3ba9cfbd17901875698e15b fecha=2026-11-17T07:49:17Z
+video=024_ciudad_15_minutos duracion=40.500000 lufs=-14.0 md5=ece49a1d5d76a881f257c5a8b278fbde fecha=2026-11-18T07:49:08Z
