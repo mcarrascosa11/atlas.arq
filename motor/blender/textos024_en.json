@@ -1,0 +1,17 @@
+{
+ "fps": 30,
+ "paso": 0.2,
+ "textos": [
+  [0, 4.5, "024 · THE 15-MINUTE CITY", "Will the government force you to stay in your neighbourhood?"],
+  [4.5, 9.0, "01 · THE IDEA", "This is the 15-minute city: your everyday needs a short walk from home."],
+  [9.0, 13.5, "02 · THE BASICS", "Living, working, shopping, healthcare, learning and leisure, 15 minutes away on foot or by bike."],
+  [13.5, 18.0, "03 · THE ORIGIN", "Urbanist Carlos Moreno proposed it in 2016. Paris made it its flagship in 2020."],
+  [18.0, 22.5, "04 · THE HOAX", "In 2023 it went viral in Oxford, mixed up with a plan for traffic filters."],
+  [22.5, 27.0, "05 · THE FILTERS", "Cameras limit cars on six streets. On foot, by bike or by bus, you can always pass."],
+  [27.0, 31.5, "06 · NO WALLS", "No physical barriers: you can still drive anywhere, even if you go the long way."],
+  [31.5, 36.0, "07 · NOTHING NEW", "In 1929, Clarence Perry drew neighbourhoods with the school at the centre and everything within 400 metres."],
+  [36.0, 40.5, "08 · AND YOURS?", "What's within 15 minutes of your home?"]
+ ],
+ "rojas": ["force", "everyday", "15", "2016.", "viral", "always", "barriers:", "1929,", "15"],
+ "portada": {"fotograma": 60, "n": "024", "t": "will the government force you to stay in your neighbourhood?", "m": ["the 15-minute city", "schematic city · 1929 – 2026", "scale XL"]}
+}
