@@ -1,0 +1,17 @@
+{
+ "fps": 30,
+ "paso": 0.2,
+ "textos": [
+  [0, 4.5, "DRUZHBA · CRIMEA · 1978 – 1985", "Why does this Soviet sanatorium stand on just three legs?"],
+  [4.5, 9.0, "01 · THE RESORT", "Built by Igor Vasilevsky between 1978 and 1985: a thermal spa for Soviet oil workers."],
+  [9.0, 13.5, "02 · FRIENDSHIP", "Druzhba means friendship: a joint project of the USSR and Czechoslovakia."],
+  [13.5, 18.0, "03 · THE TEETH", "Every notch is a room with a sea view, and part of the structure."],
+  [18.0, 22.5, "04 · THE ENTRANCE", "You come in from the top: across a bridge, onto the roof."],
+  [22.5, 27.0, "05 · THE LIFTS", "Lifts inside the legs take guests down to the rooms and to the sea."],
+  [27.0, 31.5, "06 · THE GROUND", "The real reason is underneath: a slope prone to landslides, in seismic zone 8."],
+  [31.5, 36.0, "07 · THE ANSWER", "Three supports, and a ring that flies over the hillside instead of sitting on it."],
+  [36.0, 40.5, "08 · THE SPIES", "Legend says Turkish spies took it for a secret military base."]
+ ],
+ "rojas": ["three", "1985:", "friendship:", "notch", "top:", "legs", "landslides,", "flies", "military"],
+ "portada": {"fotograma": 60, "n": "1985", "t": "why does this soviet sanatorium stand on three legs?", "m": ["druzhba sanatorium · igor vasilevsky", "crimea · 1978 – 1985", "scale M"]}
+}
